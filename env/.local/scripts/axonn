@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+export PYTHONPATH=~/repos/work/AxoNN/src:~/repos/work/AxoNN/tools
+~/repos/work/AxoNN/.venv/bin/python ~/repos/work/AxoNN/tools/axonn/main.py $@

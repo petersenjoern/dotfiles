@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+dry_run="0"
+
+if [ -z "$XDG_CONFIG_HOME" ]; then
+    echo "no xdg config hom"
+    echo "using ~/.config"
+    XDG_CONFIG_HOME=$HOME/.config
+fi
+
+if [ -z "$DEV_ENV" ]; then
+    echo "env var DEV_ENV needs to be present"
+    exit 1
+fi
+
+if [[ $1 == "--dry" ]]; then
+    dry_run="1"
+fi
+
+log() {
+    if [[ $dry_run == "1" ]]; then
+        echo "[DRY_RUN]: $1"
+    else
+        echo "$1"
+    fi
+}
+
+log "env: $DEV_ENV"
+
+update_files() {
+    log "copying over files from: $1"
+    pushd $1 &> /dev/null
+    (
+        configs=`find . -mindepth 1 -maxdepth 1 -type d`
+        for c in $configs; do
+            directory=${2%/}/${c#./}
+            log "    removing: rm -rf $directory"
+
+            if [[ $dry_run == "0" ]]; then
+                rm -rf $directory
+            fi
+
+            log "    copying env: cp $c $2"
+            if [[ $dry_run == "0" ]]; then
+                cp -r ./$c $2
+            fi
+        done
+
+    )
+    popd &> /dev/null
+}
+
+copy() {
+    log "removing: $2"
+    if [[ $dry_run == "0" ]]; then
+        rm $2
+    fi
+    log "copying: $1 to $2"
+    if [[ $dry_run == "0" ]]; then
+        cp $1 $2
+    fi
+}
+
+# local configs
+update_files $DEV_ENV/env/.config $XDG_CONFIG_HOME
+update_files $DEV_ENV/env/.local $HOME/.local/
+
+copy $DEV_ENV/env/.xprofile $HOME/.xprofile
+copy $DEV_ENV/env/.tmux-sessionizer $HOME/.tmux-sessionizer
+
+## zsh
+copy $DEV_ENV/zsh/.zshrc $HOME/.zshrc
+copy $DEV_ENV/zsh/.zsh_profile $HOME/.zsh_profile
+copy $DEV_ENV/zsh/.p10k.zsh $HOME/.p10k.zsh
+mkdir -p "$HOME/.oh-my-zsh/plugins/correction"
+copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/plugins/correction/correction.zsh
+
+## vscode
+copy $DEV_ENV/vscode/settings.json $WIN_HOME/AppData/Roaming/Code/User/settings.json
+copy $DEV_ENV/vscode/keybindings.json $WIN_HOME/AppData/Roaming/Code/User/keybindings.json
+
+# Glazewm
+copy $DEV_ENV/glazewm/config.yaml $WIN_HOME/.glzr/glazewm/config.yaml
+
+# alacritty
+copy $DEV_ENV/alacritty/alacritty.toml $WIN_HOME/AppData/Roaming/alacritty/alacritty.toml
+
+## bat
+copy /usr/bin/batcat $HOME/.local/bin/bat
+
+## fd
+copy "$(which fdfind)" $HOME/.local/bin/fd
+
+## fzf
+copy $DEV_ENV/fzf/key-bindings.zsh $HOME/.local/share/fzf/key-bindings.zsh
+copy $DEV_ENV/fzf/completion.zsh $HOME/.local/share/fzf/completion.zsh
+
+## git
+copy $DEV_ENV/git/.gitconfig $HOME/.gitconfig
+copy $DEV_ENV/git/.gitconfig-personal $HOME/.gitconfig-personal
+copy $DEV_ENV/git/.gitconfig-work $HOME/.gitconfig-work
+copy $DEV_ENV/git/.gitignore $HOME/.gitignore
+
+## tmux
+copy $DEV_ENV/tmux/.tmux.conf $HOME/.tmux.conf
+tmux source-file $HOME/.tmux.conf
+
+## claude code
+copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
+copy $DEV_ENV/claude/commands/planning.md $HOME/.claude/commands/planning.md
+copy $DEV_ENV/claude/commands/spec.md $HOME/.claude/commands/spec.md

@@ -1,0 +1,331 @@
+{
+  "terminal.integrated.inheritEnv": false,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "workbench.editorAssociations": {
+    "*.pth": "default",
+    "*.pdf": "default",
+    "*.json": "default"
+  },
+  "security.workspace.trust.untrustedFiles": "open",
+  "[python]": {
+    "editor.formatOnType": true
+  },
+  "python.languageServer": "Pylance",
+  "diffEditor.codeLens": true,
+  "emmet.includeLanguages": {
+    "typescript": "typescriptreact",
+    "javascript": "javascriptreact"
+  },
+  "vim.commandLineModeKeyBindingsNonRecursive": [],
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnSave": true,
+  "editor.suggest.insertMode": "replace",
+  "editor.fontFamily": "'MesloLGS Nerd Font'",
+  "editor.fontSize": 14,
+  "editor.fontLigatures": true,
+  "terminal.integrated.fontFamily": "'MesloLGS Nerd Font'",
+  "editor.linkedEditing": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "editor.minimap.enabled": false,
+  "update.showReleaseNotes": false,
+  "zenMode.hideLineNumbers": false,
+  "editor.lineNumbers": "relative",
+  "editor.cursorSurroundingLines": 14,
+  //"editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?_",
+  "vim.highlightedyank.enable": true,
+  "vim.highlightedyank.color": "#a9dc7660",
+  "vim.highlightedyank.duration": 250,
+  "vim.leader": "<Space>",
+  "vim.smartRelativeLine": true,
+  "vim.textwidth": 80,
+  "vim.hlsearch": true,
+  "vscode-neovim.neovimExecutablePaths.linux": "/usr/bin/nvim",
+  "vscode-neovim.useWSL": true,
+  "vim.normalModeKeyBindingsNonRecursive": [
+    // NAVIGATION
+    // Harpoon
+    {
+      "before": ["<leader>", "h", "a"],
+      "commands": ["vscode-harpoon.addEditor"]
+    },
+    {
+      "before": ["<leader>", "h", "e"],
+      "commands": ["vscode-harpoon.editEditors"]
+    },
+    {
+      "before": ["<leader>", "h", "o"],
+      "commands": ["vscode-harpoon.editorQuickPick"]
+    },
+    {
+      "before": ["<leader>", "h", "p"],
+      "commands": ["vscode-harpoon.gotoPreviousHarpoonEditor"]
+    },
+    {
+      "before": ["<leader>", "h", "l"],
+      "commands": ["vscode-harpoon.listEditors"]
+    },
+    {
+      "before": ["<leader>", "h", "t"],
+      "commands": ["vscode-harpoon.toggleEditorList"]
+    },
+    {
+      "before": ["<leader>", "h", "1"],
+      "commands": ["vscode-harpoon.gotoEditor1"]
+    },
+    {
+      "before": ["<leader>", "h", "2"],
+      "commands": ["vscode-harpoon.gotoEditor2"]
+    },
+    {
+      "before": ["<leader>", "h", "3"],
+      "commands": ["vscode-harpoon.gotoEditor3"]
+    },
+    {
+      "before": ["<leader>", "h", "4"],
+      "commands": ["vscode-harpoon.gotoEditor4"]
+    },
+    {
+      "before": ["<leader>", "h", "5"],
+      "commands": ["vscode-harpoon.gotoEditor5"]
+    },
+    {
+      "before": ["<leader>", "h", "6"],
+      "commands": ["vscode-harpoon.gotoEditor6"]
+    },
+    {
+      "before": ["<leader>", "h", "7"],
+      "commands": ["vscode-harpoon.gotoEditor7"]
+    },
+    {
+      "before": ["<leader>", "h", "8"],
+      "commands": ["vscode-harpoon.gotoEditor8"]
+    },
+    {
+      "before": ["<leader>", "h", "9"],
+      "commands": ["vscode-harpoon.gotoEditor9"]
+    },
+    // switch b/w buffers
+    { "before": ["<S-h>"], "commands": [":bprevious"] },
+    { "before": ["<S-l>"], "commands": [":bnext"] },
+    { "before": ["leader", "y"], "after": ["\"", "+", "y"] },
+    { "before": ["leader", "Y"], "after": ["\"", "+", "Y"] },
+    { "before": ["<leader>", "d"], "after": ["\"", "_", "d"] },
+    { "before": ["n"], "after": ["n", "z", "z", "z", "v"] },
+    { "before": ["N"], "after": ["N", "z", "z", "z", "v"] },
+    { "before": ["<C-d>"], "after": ["<C-d>", "z", "z"] },
+    { "before": ["<C-u>"], "after": ["<C-u>", "z", "z"] },
+    {
+      "before": ["<leader>", "s"],
+      "after": [
+        ":",
+        "%",
+        "s",
+        "/",
+        "<C-r>",
+        "<C-w>",
+        "/",
+        "<C-r>",
+        "<C-w>",
+        "/",
+        "g",
+        "I",
+        "<Left>",
+        "<Left>",
+        "<Left>"
+      ]
+    },
+    { "before": ["leader", "m", "p"], "after": ["\"", "a", "p"] },
+    { "before": ["leader", "m", "y"], "after": ["\"", "a", "y", "$"] },
+    {
+      "before": ["<leader>", "d", "e"],
+      "commands": ["workbench.view.debug"],
+      "when": ["viewContainer.workbench.view.debug.enabled"]
+    },
+    {
+      "before": ["<leader>", "t"],
+      "commands": ["workbench.view.testing.focus"]
+    },
+    {
+      "before": ["<leader>", "r"],
+      "commands": ["testing.runAtCursor"]
+    },
+    {
+      "before": ["<leader>", "r", "d"],
+      "commands": ["testing.debugAtCursor"]
+    },
+    {
+      "before": ["<leader>", "f", "e"],
+      "commands": ["workbench.view.explorer"]
+    },
+    {
+      "before": ["<leader>", "f", "f"],
+      "commands": ["workbench.action.focusActiveEditorGroup"]
+    },
+    // splits
+    { "before": ["leader", "s", "v"], "commands": [":vsplit"] },
+    { "before": ["leader", "s", "h"], "commands": [":split"] },
+
+    // panes
+    {
+      "before": ["leader", "h"],
+      "commands": ["workbench.action.focusLeftGroup"]
+    },
+    {
+      "before": ["leader", "j"],
+      "commands": ["workbench.action.focusBelowGroup"]
+    },
+    {
+      "before": ["leader", "k"],
+      "commands": ["workbench.action.focusAboveGroup"]
+    },
+    {
+      "before": ["leader", "l"],
+      "commands": ["workbench.action.focusRightGroup"]
+    },
+    // NICE TO HAVE
+    { "before": ["leader", "w"], "commands": [":w!"] },
+    {
+      "before": ["leader", "o"],
+      "commands": ["workbench.action.closeOtherEditors"]
+    },
+    { "before": ["leader", "q"], "commands": [":q!"] },
+    { "before": ["leader", "x"], "commands": [":x!"] },
+    {
+      "before": ["[", "d"],
+      "commands": ["editor.action.marker.prev"]
+    },
+    {
+      "before": ["]", "d"],
+      "commands": ["editor.action.marker.next"]
+    },
+    {
+      "before": ["<leader>", "c", "a"],
+      "commands": ["editor.action.quickFix"]
+    },
+    // { "before": ["leader", "f"], "commands": ["workbench.action.quickOpen"] },
+    // { "before": ["leader", "p"], "commands": ["editor.action.formatDocument"] },
+    {
+      "before": ["g", "p", "d"],
+      "commands": ["editor.action.peekDefinition"]
+    },
+    {
+      "before": ["g", "h"],
+      "commands": ["editor.action.showHover"]
+    },
+    {
+      "before": ["g", "i"],
+      "commands": ["editor.action.goToImplementation"]
+    },
+    {
+      "before": ["g", "p", "i"],
+      "commands": ["editor.action.peekImplementation"]
+    },
+    {
+      "before": ["g", "r"],
+      "commands": ["editor.action.referenceSearch.trigger"]
+    },
+    {
+      "before": ["g", "t"],
+      "commands": ["editor.action.goToTypeDefinition"]
+    },
+    {
+      "before": ["g", "p", "t"],
+      "commands": ["editor.action.peekTypeDefinition"]
+    },
+    {
+      "before": ["<leader>", "b"],
+      "commands": ["editor.debug.action.toggleBreakpoint"]
+    }
+  ],
+  "vim.visualModeKeyBindings": [
+    // Stay in visual mode while indenting
+    { "before": ["<"], "commands": ["editor.action.outdentLines"] },
+    { "before": [">"], "commands": ["editor.action.indentLines"] },
+    // Move selected lines while staying in visual mode
+    { "before": ["J"], "commands": ["editor.action.moveLinesDownAction"] },
+    { "before": ["K"], "commands": ["editor.action.moveLinesUpAction"] },
+    { "before": ["leader", "p"], "after": ["\"", "_", "d", "P"] },
+    { "before": ["leader", "y"], "after": ["\"", "+", "y"] },
+    { "before": ["<leader>", "d"], "after": ["\"", "_", "d"] },
+    {
+      "before": ["<leader>", "b"],
+      "commands": ["editor.debug.action.toggleBreakpoint"]
+    }
+  ],
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "workbench.activityBar.location": "top",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "task.allowAutomaticTasks": "on",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "remote.autoForwardPortsSource": "hybrid",
+  "remote.SSH.remotePlatform": {
+    "Majorie": "linux"
+  },
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false
+  },
+  "git.suggestSmartCommit": false,
+  "github.copilot.editor.enableAutoCompletions": true,
+  "python.analysis.packageIndexDepths": [
+    {
+      "name": "sklearn",
+      "depth": 2
+    },
+    {
+      "name": "matplotlib",
+      "depth": 2
+    },
+    {
+      "name": "scipy",
+      "depth": 2
+    },
+    {
+      "name": "django",
+      "depth": 2
+    },
+    {
+      "name": "flask",
+      "depth": 2
+    },
+    {
+      "name": "fastapi",
+      "depth": 2
+    },
+    {
+      "name": "inspect_ai",
+      "depth": 2
+    }
+  ],
+  "editor.wordWrap": "on",
+  "editor.inlayHints.enabled": "off",
+  "workbench.colorCustomizations": {
+    "editor.lineHighlightBackground": "#1073cf2d",
+    "editor.lineHighlightBorder": "#9fced11f"
+  },
+  "diffEditor.wordWrap": "off",
+  "editor.guides.indentation": false,
+  "editor.guides.bracketPairs": false
+}

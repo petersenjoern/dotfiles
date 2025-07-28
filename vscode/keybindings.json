@@ -1,0 +1,218 @@
+// Place your key bindings in this file to override the defaults
+[
+  // { "key": "up", "command": "" },
+  // { "key": "down", "command": "" },
+  // { "key": "left", "command": "" },
+  // { "key": "right", "command": "" },
+  {
+    "key": "alt+left",
+    "command": "workbench.action.navigateBack",
+    "when": "canNavigateBack"
+  },
+  {
+    "key": "ctrl+alt+-",
+    "command": "-workbench.action.navigateBack",
+    "when": "canNavigateBack"
+  },
+  {
+    "key": "alt+right",
+    "command": "workbench.action.navigateForward",
+    "when": "canNavigateForward"
+  },
+  {
+    "key": "ctrl+shift+-",
+    "command": "-workbench.action.navigateForward",
+    "when": "canNavigateForward"
+  },
+  // Additional vim-style navigation for go back/forward
+  // {
+  //   "key": "ctrl+o",
+  //   "command": "workbench.action.navigateBack",
+  //   "when": "canNavigateBack && editorTextFocus && vim.active"
+  // },
+  // {
+  //   "key": "ctrl+i",
+  //   "command": "workbench.action.navigateForward",
+  //   "when": "canNavigateForward && editorTextFocus && vim.active"
+  // },
+  // NAVIGATION
+  {
+    "key": "ctrl+shift+a",
+    "command": "workbench.action.terminal.focusNext",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+shift+b",
+    "command": "workbench.action.terminal.focusPrevious",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+shift+j",
+    "command": "workbench.action.togglePanel"
+  },
+  {
+    "key": "ctrl+shift+n",
+    "command": "workbench.action.terminal.new",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+shift+w",
+    "command": "workbench.action.terminal.kill",
+    "when": "terminalFocus"
+  },
+  // FILE TREE
+  {
+    "command": "workbench.action.toggleSidebarVisibility",
+    "key": "ctrl+e"
+  },
+  // {
+  //   "command": "workbench.files.action.focusFilesExplorer",
+  //   "key": "ctrl+e",
+  //   "when": "editorTextFocus"
+  // },
+  {
+    "key": "n",
+    "command": "explorer.newFile",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+  {
+    "command": "renameFile",
+    "key": "r",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+  {
+    "key": "shift+n",
+    "command": "explorer.newFolder",
+    "when": "explorerViewletFocus"
+  },
+  {
+    "key": "ctrl+shift+n",
+    "command": "workbench.action.newWindow",
+    "when": "!explorerViewletFocus"
+  },
+  {
+    "command": "deleteFile",
+    "key": "d",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+  {
+    "key": "x",
+    "command": "filesExplorer.cut",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+  },
+  {
+    "key": "y",
+    "command": "filesExplorer.copy",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !inputFocus"
+  },
+  {
+    "key": "p",
+    "command": "filesExplorer.paste",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceReadonly && !inputFocus"
+  },
+  // EXTRA
+  {
+    "key": "ctrl+shift+5",
+    "command": "editor.emmet.action.matchTag"
+  },
+  {
+    "key": "ctrl+z",
+    "command": "workbench.action.toggleZenMode"
+  },
+  // {
+  //   "key": "ctrl+d",
+  //   "command": "editor.action.addSelectionToNextFindMatch",
+  //   "when": "editorTextFocus"
+  // },
+
+  // Scroll in Show Hover
+  {
+    "key": "h",
+    "command": "editor.action.scrollLeftHover",
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "j",
+    "command": "editor.action.scrollDownHover",
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "k",
+    "command": "editor.action.scrollUpHover",
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "l",
+    "command": "editor.action.scrollRightHover",
+    "when": "editorHoverFocused"
+  },
+
+  // Scroll in Find
+  {
+    "key": "h",
+    "command": "editor.action.find.previousMatchFindInput",
+    "when": "editorFocus && findInputFocused"
+  },
+  {
+    "key": "j",
+    "command": "editor.action.nextMatchFindAction",
+    "when": "editorFocus && findInputFocused"
+  },
+  {
+    "key": "k",
+    "command": "editor.action.previousMatchFindAction",
+    "when": "editorFocus && findInputFocused"
+  },
+  {
+    "key": "l",
+    "command": "editor.action.find.nextMatchFindInput",
+    "when": "editorFocus && findInputFocused"
+  },
+
+  // Scroll if quickfix
+
+  {
+    "key": "ctrl+k",
+    "command": "workbench.action.quickOpenSelectPrevious",
+    "when": "inQuickOpen && !editorReadonly && vim.active"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "workbench.action.quickOpenSelectNext",
+    "when": "inQuickOpen && !editorReadonly && vim.active"
+  },
+
+  // Additional navigation keybindings
+  // {
+  //   "key": "g b",
+  //   "command": "workbench.action.navigateBack",
+  //   "when": "canNavigateBack && vim.mode == 'Normal'"
+  // },
+  // {
+  //   "key": "g f",
+  //   "command": "workbench.action.navigateForward",
+  //   "when": "canNavigateForward && vim.mode == 'Normal'"
+  // },
+  {
+    "key": "ctrl+shift+o",
+    "command": "workbench.action.navigateBack",
+    "when": "canNavigateBack"
+  },
+  {
+    "key": "ctrl+shift+i",
+    "command": "workbench.action.navigateForward",
+    "when": "canNavigateForward"
+  },
+  {
+    "key": "ctrl+p",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.view.search.focus"
+  },
+  {
+    "key": "ctrl+t",
+    "command": "workbench.action.showAllSymbols"
+  }
+]

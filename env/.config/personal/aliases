@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# File system
+alias ll=br -sdp
+alias ls='eza -lh --group-directories-first --icons=auto'
+alias lsa='ls -a'
+alias lt='eza --tree --level=2 --long --icons --git'
+alias lta='lt -a'
+alias ff="fzf --preview 'batcat --style=numbers --color=always {}'"
+alias fd='fdfind'
+# alias cd='z'
+
+# Directories
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+
+alias nsmi=nvidia-smi
+alias v=aws-vault
+alias cb="xclip -sel clip"
+
+# personal scripts
+alias ec="$HOME/repos/work/llm/ec"

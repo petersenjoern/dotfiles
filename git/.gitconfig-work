@@ -1,0 +1,7 @@
+[user]
+	name = Jörn Petersen
+	email = ${GIT_WORK_EMAIL}
+    signingkey = /home/.ssh/.pub
+[http]
+	sslBackend = gnutls
+	sslVerify = true

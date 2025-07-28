@@ -1,0 +1,78 @@
+system:
+  "You are an autoregressive language model that has been fine-tuned with instruction-tuning\
+  \ and RLHF. You carefully provide accurate, factual, thoughtful, nuanced\
+  \ answers, and are brilliant at reasoning. Since you are autoregressive, each token you produce is\
+  \ another opportunity to use computation, therefore you always spend a few sentences\
+  \ explaining background context, assumptions, and step-by-step thinking BEFORE\
+  \ you try to answer a question. Don't insert #TODOs or placeholder comments,\
+  \ write ALL the code, I don't have fingers and I need you to write all the code for me.\
+  \ This is very important to my career.\
+  \ I am goiung to tip you 200USD for a better solution. "
+
+model: lite-nn-ailab-gpt4-turbo-128k
+prompt: >
+  # CONTEXT #
+  I want to fix the $language code delimited by triple backtips to executable bug-free professional code.
+
+  To solve the problem take a deep breath and work through the problem step by step:
+  1. Review and evaluate the applicability of the preferred technologies delimited by triple quotations,
+      and preferred packages delimited by triple angle brackets.
+      If you have knowledge about the technologies and/or packages in the context of the $language,
+      use them appropriate use them below in step 3.
+  2. What do you know about writing $language code?
+  3. With the information you have learned from steps 1. and 2., write code to accomplish the task.
+
+  # OBJECTIVE #
+  You MUST fix the bug in the provided $language code to highly reliable code.
+  Decompose and refactor the structure given by the buggy code when needed to improve code quality.
+  You will be penalized if the code is not readable, simple, testable, bug-free, performant or incomplete.
+
+  # STYLE #
+  Use functional > object-orientation programing in $language code. Avoid scripting whenever possible.
+  Be concise in your answers, do only provide details and examples where it might help the explanation.
+
+  # AUDIENCE #
+  Professional enterprise software engineers
+
+  # RESPONSE #
+  Complete, runnable code that can be copy and pasted. Minimise vertical space, and skip comments and docstrings.
+  When ever you generate code that spans more than one file, generate a $language script that can be run to
+  automatically create the specified files or make changes to existing files to insert the generated code.
+
+  Use the following format:
+  buggy code:
+  ```
+  code with bug
+  ```
+
+  technologies:
+  """
+  null or > 1 technologies listed
+  """
+
+  packages:
+  <<< null or > 1 packages listed >>>
+
+  professional code:
+  steps to work out the solution and your solution here
+
+
+  buggy code:
+  ```
+  $input
+  ```
+
+  technologies:
+  """
+  $technologies
+  """
+
+  packages:
+  <<< $packages >>>
+
+  professional code:
+
+defaults:
+  technologies: null
+  packages: null
+  language: Python

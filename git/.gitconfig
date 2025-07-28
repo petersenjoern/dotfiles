@@ -1,0 +1,66 @@
+[user]
+	name = Joern Petersen
+[include]
+    path = ~/.gitconfig-personal
+[includeIf "gitdir:~/repos/work/"]
+    path = ~/.gitconfig-work
+[credential]
+    helper = cache --timeout=600
+[color]
+    branch = auto
+    diff = auto
+    status = auto
+[merge]
+    tool = kdiff3
+[core]
+    excludesfile = ~/.gitignore
+    editor = vim
+[push]
+    default = simple
+[filter "tabspace"]
+    clean = expand --tabs=4 --initial
+[filter "lfs"]
+    smudge=git-lfs smudge -- %f
+    process=git-lfs filter-process
+    required=True
+[alias]
+a = add -A
+ap = !git add -p $(git status -s | cut -d' ' -f2- | fzf -m)
+s = status -s
+cm = commit -m
+cam = commit -am
+co = checkout
+cop = "!git checkout $1 && git pull origin"
+undo = reset --soft HEAD^
+cob = checkout -b
+ca = commit --amend
+c = commit
+ri = rebase --interactive
+rc = rebase --continue
+rs = rebase --skip
+b = branch
+ba = branch -a
+f = fetch
+pu = push
+fb = "!git checkout development && git cob $1"
+zip = archive --format=zip -9
+diffc = diff --cached
+ai = add --interactive
+branch-name = "!git rev-parse --abbrev-ref HEAD"
+pub = "!git push -u origin $(git branch-name)"
+pubto = "!git push -u $@ $(git branch-name) #"
+pullo = "!git fetch && git reset --hard origin/$(git branch-name)"
+pubt = "!git push --tags -u origin $(git branch-name)"
+unpub = "!git push origin :$(git branch-name)"
+gotag = !git tag -m "$1" -a
+wipr = for-each-ref --sort='committerdate:iso8601' --format=' %(color:yellow)%(committerdate:relative)%09%(color:white)%(refname:short)' refs/remotes/origin
+wip = for-each-ref --sort='committerdate:iso8601' --format=' %(color:yellow)%(committerdate:relative)%09%(color:white)%(refname:short)' refs/heads/
+t = tag
+td = tag -d
+pr = "!brainn pr"
+cb = "!brainn branch"
+sup = submodule update
+most-recent-tag = "describe --tags --abbrev=0"
+branch-name = "!git rev-parse --abbrev-ref HEAD"
+rebase-master = !CURRENT=$(git branch-name) && git cop master && git co $CURRENT && git rebase master
+fco = "!git checkout $(git branch --sort='-committerdate:iso8601' | fzf)"

@@ -1,0 +1,14 @@
+model_list:
+  - model_name: phi
+    litellm_params:
+      model: ollama/phi3
+      api_base: http://localhost:11434
+  - model_name: gpt4-turbo-128k
+    litellm_params:
+      model: openai/openai_gpt4_turbo_128k
+      api_base: https://xxxx.com/api/v1
+      api_key: "os.environ/AI_API_KEY"
+
+litellm_settings: # module level litellm settings - https://github.com/BerriAI/litellm/blob/main/litellm/__init__.py
+  drop_params: True
+  set_verbose: True

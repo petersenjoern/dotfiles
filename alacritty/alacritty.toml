@@ -1,0 +1,62 @@
+selection.save_to_clipboard = true
+
+
+[font]
+normal = { family = "MesloLGLDZ Nerd Font Mono", style = "Regular" }
+bold = { family = "MesloLGLDZ Nerd Font Mono", style = "Bold" }
+italic = { family = "MesloLGLDZ Nerd Font Mono", style = "Italic" }
+size = 10
+
+
+
+[env]
+TERM = "xterm-256color"
+
+[terminal.shell]
+program = "wsl"
+args = ["tmux"]
+
+[window]
+padding.x = 16
+padding.y = 14
+decorations = "None"
+opacity = 0.98
+
+[cursor]
+style.shape = "Block"
+style.blinking = "Off"
+
+[keyboard]
+bindings = [{ key = "F11", action = "ToggleFullscreen" }]
+
+
+[colors]
+[colors.primary]
+background='0x1e1e1e'
+foreground= '0xc9d1d9'
+
+[colors.cursor]
+text= '0x0d1117'
+cursor= '0xc9d1d9'
+
+# Normal colors
+[colors.normal]
+black= '0x484f58'
+red= '0xff7b72'
+green= '0x58a6ff'
+yellow= '0xd29922'
+blue= '0x58a6ff'
+magenta= '0xbc8cff'
+cyan= '0x39c5cf'
+white= '0xb1bac4'
+
+# Bright colors
+[colors.bright]
+black= '0x6e7681'
+red= '0xffa198'
+green= '0x79c0ff'
+yellow= '0xe3b341'
+blue= '0x79c0ff'
+magenta= '0xbc8cff'
+cyan= '0x39c5cf'
+white= '0xb1bac4'

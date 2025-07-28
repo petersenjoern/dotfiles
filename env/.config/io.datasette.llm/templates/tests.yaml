@@ -1,0 +1,112 @@
+system:
+  "You are an autoregressive language model that has been fine-tuned with instruction-tuning\
+  \ and RLHF. You carefully provide accurate, factual, thoughtful, nuanced\
+  \ answers, and are brilliant at reasoning. Since you are autoregressive, each token you produce is\
+  \ another opportunity to use computation, therefore you always spend a few sentences\
+  \ explaining background context, assumptions, and step-by-step thinking BEFORE\
+  \ you try to answer a question. Be concise in your answers, do only provide details and examples\
+  \ where it might help the explanation. When showing $language code use preferable\
+  \ functional > object-orientation programing, avoid scripting whenever possible,\
+  \ minimise vertical space, and skip comments and docstrings;\
+  \ Don't insert #TODOs or placeholder comments, write ALL the code."
+
+model: anthropic_claude_sonnet_4_v1_0
+prompt: >
+
+  You will be provided with one or multiple $language code instructions delimited by triple backtips.
+  Your task is to analyze each of the $language code instructions and subsequently write high quality unittests
+  using the AAA - Arrange, Act, Assert pattern. A good test is more readable and straightforward than the code itself.
+  The test should be stateless, deterministic, performant and only test one requirement at a time.
+  You MUST use a functional approach. You will be penalized if you use the unittest.TestCase setup framework.
+
+  Examples:
+  @pytest.mark.parametrize("actual, predicted, expected",[
+        # list of strings
+        (["cat", "dog", "bird"], ["cat", "dog", "bird"], 100.0),  # equal
+        (["cat", "dog", "bird"], ["cat", "dog", "fish"], 66.666666667),  # 2/3
+        # list of integers
+        ([1, 2, 3], [1, 2, 3], 100.0),  # equal
+        ([1, 2, 3], [1, 2, 4], 66.666666667),  # 2/3
+        # list of floats
+        ([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], 100.0),  # equal
+        ([1.0, 2.0, 3.0], [1.0, 2.0, 4.0], 66.666666667),  # 2/3
+        # with other iterables
+        (deque([True, False, True]), deque([True, False, True]), 100.0),  # equal
+        (deque([True, False, True]), deque([True, False, False]), 66.666666667),  # 2/3
+    ])
+  def test_calculate_accuracy(actual: Iterable[T], predicted: Iterable[T], expected: float) -> None:
+    accuracy = calculate_accuracy(actual, predicted)
+    assert abs(accuracy - expected) < 0.0001
+
+
+  @pytest.mark.parametrize("actual, predicted",[
+        # Non-happy path tests
+        ([1, 2, 3], [1, 2]),  # different lengths
+        ([1, 2, 3, 4], [1, 2]),  # different lengths
+    ])
+  def test_calculate_accuracy_non_happy_path(actual: Iterable[T], predicted: Iterable[T]) -> None:
+    with pytest.raises(ValueError, match="Iterables must have the same length"):
+      calculate_accuracy(actual, predicted)
+
+
+  To solve the problem take a deep breath and work through the problem step by step:
+  1. Review and evaluate the applicability of the preferred technologies delimited by triple quotations.
+      If one or multiple are appropriate use them below in steps 4.,5. and 6.
+  2. Review and evaluate the applicability of the preferred packages delimited by angle brackets.
+      If you have knowledge about the packages in the context of the $language,
+      use one or multiple of them appropriate use them below in steps 4.,5. and 6.
+  3. Explain step-by-step what the each of the provided code instructions is accomplishing.
+  4. Please write custom assert functions and custom functions to generate random mock/test data when suitable.
+      If you create custom functions, remember to unit test the tests as well.
+  5. Please write a unittest to cover the happy path, parameterize the unittest with multiple examples whenever possible.
+  6. Please unittest the edge cases. Test things that aren’t supposed to happen too often like
+      wrong input, missing arguments, empty data, exceptions in called functions, etc.
+      Write a unittest for each edge case and parameterize the test with multiple examples.
+
+  Use the following format:
+  code to unittest:
+  ```
+  one or multiple code instructions
+  ```
+
+  technologies:
+  """
+  null or > 1 technologies listed
+  """
+
+  packages:
+  < null or > 1 packages listed >
+
+  custom assert and mock data functions:
+  steps to work out the custom functions and the code of them here
+
+  unittest for happy path parameterized:
+  steps to work out the happy path and your unittest code here
+
+  unittests for edge cases parameterized:
+  steps to work out the edge cases and your unittests code for the edge cases here
+
+
+  code to unittest:
+  ```
+  $input
+  ```
+
+  technologies:
+  """
+  $technologies
+  """
+
+  packages:
+  < $packages >
+
+  custom assert and mock data functions:
+
+  unittest for happy path parameterized:
+
+  unittests for edge cases parameterized:
+
+defaults:
+  technologies: null
+  packages: pytest; requests_mock
+  language: Python

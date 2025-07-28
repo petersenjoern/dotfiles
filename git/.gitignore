@@ -1,0 +1,66 @@
+.fuse_*
+.venv
+bpvenv
+.svn/
+.fuse_*
+// Latex stuff
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.pdf
+*.thm
+.vim/bundle/*
+// vim-stuff
+*.swp
+*.swn
+*.swo
+// python-stuff
+*.pyc
+
+// custom venvs
+venvlangchain
+venvautogen
+venvwrangler
+venvpipeline
+/tempdata
+
+// xmonad stuff
+xmonad.errors
+xmonad.hi
+xmonad.o
+xmonad-x86_64-linux
+.pytest_cache
+.vscode
+*.zip
+*.orig
+*.dem
+.envrc
+plan
+.terraform/
+*.terraform.lock.hcl
+
+// AutoGen stuff
+OAI_CONFIG_LIST
+OAI_CONFIG*
+
+//repomix
+output.txt
+output.xml
+repomix-output.txt
+repomix-output.xml
+
+// monsterui
+**/.sesskey
+
+
+//llm cli
+**/io.datasette.llm/logs.db
+
+//notes
+notes.md
+todo.md

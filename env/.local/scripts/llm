@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+source ~/secrets.sh
+~/repos/work/llm/.venv/bin/llm "$@"
