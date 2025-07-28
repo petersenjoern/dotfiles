@@ -96,8 +96,6 @@ copy $DEV_ENV/fzf/completion.zsh $HOME/.local/share/fzf/completion.zsh
 
 ## git
 copy $DEV_ENV/git/.gitconfig $HOME/.gitconfig
-copy $DEV_ENV/git/.gitconfig-personal $HOME/.gitconfig-personal
-copy $DEV_ENV/git/.gitconfig-work $HOME/.gitconfig-work
 copy $DEV_ENV/git/.gitignore $HOME/.gitignore
 
 ## tmux
