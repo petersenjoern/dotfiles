@@ -22,3 +22,4 @@ alias cb="xclip -sel clip"
 
 # personal scripts
 alias ec="$HOME/repos/work/llm/ec"
+alias cedit="claude --permission-mode acceptEdits --disallowTools Bash"

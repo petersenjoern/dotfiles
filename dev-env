@@ -104,5 +104,5 @@ tmux source-file $HOME/.tmux.conf
 
 ## claude code
 copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
-copy $DEV_ENV/claude/commands/planning.md $HOME/.claude/commands/planning.md
-copy $DEV_ENV/claude/commands/spec.md $HOME/.claude/commands/spec.md
+copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
+update_files $DEV_ENV/claude $HOME/.claude/

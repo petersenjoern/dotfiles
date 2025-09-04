@@ -175,10 +175,6 @@ awsyaml () {
         aws-vault export --format ini "$1" | sed -e "s/\[$1\]/\[default\]/g" | tee ~/.aws/credentials
 }
 
-# Broot
-source /home/jrjl/.config/broot/launcher/bash/br
-
-
 # dont show user@computer in terminal
 export PS1="\W \$ "
 
@@ -214,9 +210,9 @@ load-nvmrc
 
 # Quicky switch between directories with different tmux sessions
 # Bind Ctrl+j to run tmux-sessionizer (under /usr/local/bin)
-custom-cd() { BUFFER="tmux-sessionizer"; zle accept-line;  }
-zle -N custom-cd
-bindkey '^J' custom-cd
+# custom-cd() { BUFFER="tmux-sessionizer"; zle accept-line;  }
+# zle -N custom-cd
+# bindkey '^J' custom-cd
 
 # Mise
 eval "$(~/.local/bin/mise activate zsh)"
