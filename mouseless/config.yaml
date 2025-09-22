@@ -1,0 +1,399 @@
+app_version: 0.4.0-windows_beta.4
+behavior_configs:
+- base_move_speed: 2.0
+  base_wheel_speed: 0.2
+  free_mode_auto_off_s: 10
+  grid_action_level: subgrid
+  hide_cursor_on_click: false
+  hide_location: bottom_left
+  initial_action_location: system_cursor
+  initial_overlay_monitor: with_mouse
+  move_duration_ms: 100
+  move_real_cursor_with_virtual: false
+  move_speed_multiplier: 3.0
+  movement_easing: 0.3
+  multi_action_timeout_ms: 400
+  name: main_behavior
+  send_escape_after_global_alt_tap__windows: false
+  tap_threshold_ms: 125
+  wheel_easing: 0.3
+  wheel_speed_multiplier: 4.0
+  wheel_step_size: 2.0
+  wheel_step_size_large: 10.0
+classname: AppConfig
+custom_monitor_assignments: []
+debug_options: {}
+display_input: none
+event_tap_location: hid_head
+grid_configs:
+- always_show_subgrid: false
+  grid_defn:
+  - border_width: 0.0
+    callback: build_cell_strings
+    keys: QWERT ASDFG ZXCVB YUIOP HJKL; NM,./
+    num_cells_x: 5
+    num_cells_y: 6
+  - border_width: 1.0
+    callback: build_cell_strings
+    keys: ''
+    num_cells_x: 5
+    num_cells_y: 6
+  - border_width: 0.0
+    callback: apply_strings_and_subgrid_to_cells
+    keys: ''
+    num_cells_x: 2
+    num_cells_y: 1
+  hold_subgrid_key_for_nudge: false
+  name: position_based_16_9
+  nudges_per_cell: 8
+  strategy: subgrid
+  subgrid_dims:
+  - 8
+  - 3
+  subgrid_mouse_action_keys: QWER UIOP ASDF JKL; ZXCV M,./
+keyboard_layout:
+  id: '67699721'
+  name: English (United States)
+  vk_to_char:
+    3: "\x03"
+    8: "\b"
+    9: "\t"
+    13: "\r"
+    27: "\e"
+    32: ' '
+    48:
+    - '0'
+    - )
+    49:
+    - '1'
+    - '!'
+    50:
+    - '2'
+    - '@'
+    51:
+    - '3'
+    - '#'
+    52:
+    - '4'
+    - $
+    53:
+    - '5'
+    - '%'
+    54:
+    - '6'
+    - ^
+    55:
+    - '7'
+    - '&'
+    56:
+    - '8'
+    - '*'
+    57:
+    - '9'
+    - (
+    65:
+    - a
+    - A
+    66:
+    - b
+    - B
+    67:
+    - c
+    - C
+    68:
+    - d
+    - D
+    69:
+    - e
+    - E
+    70:
+    - f
+    - F
+    71:
+    - g
+    - G
+    72:
+    - h
+    - H
+    73:
+    - i
+    - I
+    74:
+    - j
+    - J
+    75:
+    - k
+    - K
+    76:
+    - l
+    - L
+    77:
+    - m
+    - M
+    78:
+    - n
+    - N
+    79:
+    - o
+    - O
+    80:
+    - p
+    - P
+    81:
+    - q
+    - Q
+    82:
+    - r
+    - R
+    83:
+    - s
+    - S
+    84:
+    - t
+    - T
+    85:
+    - u
+    - U
+    86:
+    - v
+    - V
+    87:
+    - w
+    - W
+    88:
+    - x
+    - X
+    89:
+    - y
+    - Y
+    90:
+    - z
+    - Z
+    96: '0'
+    97: '1'
+    98: '2'
+    99: '3'
+    100: '4'
+    101: '5'
+    102: '6'
+    103: '7'
+    104: '8'
+    105: '9'
+    106: '*'
+    107: +
+    109: '-'
+    110: .
+    111: /
+    186:
+    - ;
+    - ':'
+    187:
+    - '='
+    - +
+    188:
+    - ','
+    - <
+    189:
+    - '-'
+    - _
+    190:
+    - .
+    - '>'
+    191:
+    - /
+    - '?'
+    192:
+    - '`'
+    - '~'
+    219:
+    - '['
+    - '{'
+    220:
+    - \
+    - '|'
+    221:
+    - ']'
+    - '}'
+    222:
+    - ''''
+    - '"'
+    226:
+    - \
+    - '|'
+keymaps:
+- entries:
+    back click: null
+    back mouse button: null
+    back mouse button (w/o overlay): null
+    close UI element: Escape
+    cycle click count: null
+    cycle font: '3'
+    cycle font reverse: shift+3
+    cycle grid action level: '2'
+    cycle mouse action type: null
+    cycle mouse button: null
+    decrease overlay opacity: ArrowDown
+    edit config: Tab
+    enter free mode: null
+    execute mouse action: Space
+    execute mouse move: AltLeft tap
+    exit free mode: Escape
+    forward click: null
+    forward mouse button: null
+    forward mouse button (w/o overlay): null
+    hide overlay: Escape
+    hold for back button: null
+    hold for drag: AltLeft
+    hold for forward button: null
+    hold for middle button: null
+    hold for move: null
+    hold for right button: Shift
+    hold for speed decrease: A
+    hold for speed increase:
+    - S
+    - D
+    - F
+    increase overlay opacity: ArrowUp
+    jump to bottom: null
+    jump to left edge: null
+    jump to right edge: null
+    jump to top: null
+    left mouse button: Space
+    left mouse button (w/o overlay): null
+    middle click: null
+    middle mouse button: C
+    middle mouse button (w/o overlay): null
+    move down: j
+    move left: h
+    move right: L
+    move up: k
+    release hold/drag: Escape
+    repeat last mouse action: null
+    right click: null
+    right mouse button: V
+    right mouse button (w/o overlay): null
+    show overlay: null
+    subgrid nudge down:
+    - D
+    - K
+    subgrid nudge left:
+    - S
+    - J
+    subgrid nudge right:
+    - F
+    - L
+    subgrid nudge up:
+    - E
+    - I
+    switch monitor left: null
+    switch monitor right: null
+    toggle app enabled: null
+    toggle continuous mode: ControlRight
+    toggle continuous mode until closed: '1'
+    toggle free mode: ControlLeft tap
+    toggle overlay: Shiftright
+    toggle overlay lock: null
+    undo last key: Backspace
+    wheel down: u
+    wheel down fast: null
+    wheel left: y
+    wheel left fast: null
+    wheel right: o
+    wheel right fast: null
+    wheel step down: null
+    wheel step down large: null
+    wheel step left: null
+    wheel step left large: null
+    wheel step right: null
+    wheel step right large: null
+    wheel step up: null
+    wheel step up large: null
+    wheel up: i
+    wheel up fast: null
+  name: mac
+monitor_assignment_mode: single
+name: ''
+style_configs:
+- always_on_subgrid_rgba:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 0.2
+  background_rgba:
+  - 0.49
+  - 0.4
+  - 0
+  - 0.2
+  char_spacing_cell_width_ratio: 0.5
+  char_spacing_font_size_ratio: 0.5
+  char_spacing_strategy: cell_width_relative
+  cursor_drag_rgba:
+  - 0.0
+  - 0.5
+  - 1.0
+  - 0.7
+  cursor_move_rgba:
+  - 0.75
+  - 0.41
+  - 0.92
+  - 0.7
+  cursor_other_rgba:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 0.7
+  cursor_rgba:
+  - 0.3
+  - 0.42
+  - 0.58
+  - 0.7
+  cursor_right_button_rgba:
+  - 0.92
+  - 0.32
+  - 0.32
+  - 0.6
+  cursor_size: 3
+  font_family: MS Sans Serif
+  font_size_multiplier: 0.4
+  font_weight: 300
+  grid_line_style: lines
+  grid_rgba:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 0.4
+  highlight_animation_ms: 0
+  highlight_rgba:
+  - 0.21
+  - 0.48
+  - 0.95
+  - 0.15
+  name: default
+  show_initial_highlight: true
+  subgrid_font_size_multiplier: 0.75
+  subgrid_rgba:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 0.5
+  subgrid_text_rgba:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 0.5
+  text_rgba:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 1.0
+  text_shadow_blur_radius: 4.0
+  text_shadow_offset:
+  - 0.0
+  - 0.0
+  text_shadow_rgba:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  text_y_offset: 0.0
+  window_opacity: 1.0

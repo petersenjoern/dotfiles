@@ -36,6 +36,8 @@
   "editor.lineNumbers": "relative",
   "editor.cursorSurroundingLines": 14,
   //"editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?_",
+  "vimFindHighlight.charSecondaryColor": "green",
+  "vimFindHighlight.charPrimaryColor": "red",
   "vim.highlightedyank.enable": true,
   "vim.highlightedyank.color": "#a9dc7660",
   "vim.highlightedyank.duration": 250,
@@ -288,6 +290,7 @@
     "scminput": false
   },
   "git.suggestSmartCommit": false,
+  "git.path": "/usr/bin/git",
   "github.copilot.editor.enableAutoCompletions": true,
   "python.analysis.packageIndexDepths": [
     {

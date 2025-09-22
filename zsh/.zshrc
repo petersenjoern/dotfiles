@@ -78,7 +78,7 @@ ENABLE_CORRECTION="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting python pip docker docker-compose)
+plugins=(zsh-autosuggestions zsh-syntax-highlighting docker docker-compose)
 
 
 source $ZSH/oh-my-zsh.sh
@@ -90,15 +90,34 @@ clean_docker_images() {
   done
 }
 
-
+# Enable docker completion
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
 # History search
 # Bind the up and down arrow keys to search through your history for commands that start with whatever you've already typed:
 bindkey "^[[A" history-beginning-search-backward
 bindkey "^[[B" history-beginning-search-forward
 
+# Word navigation
+bindkey "^[[1;5C" forward-word   # Ctrl + Right Arrow
+bindkey "^[[1;5D" backward-word  # Ctrl + Left Arrow
+
+
 # histfile
-HISTFILE=~/.zsh_history
+export HISTSIZE=10000
+export SAVEHIST=20000
+export HISTFILE=~/.zsh_history
+
+# History options
+setopt HIST_IGNORE_DUPS      # Don't save duplicates
+setopt HIST_IGNORE_ALL_DUPS  # Remove older duplicates
+setopt HIST_SAVE_NO_DUPS     # Don't save duplicates to file
+setopt HIST_FIND_NO_DUPS     # Don't show duplicates when searching
+setopt SHARE_HISTORY         # Share history between sessions
+setopt APPEND_HISTORY        # Append to history file
+setopt INC_APPEND_HISTORY    # Add commands immediately
+
 
 # Custom function
 ## e.g. find_ports_for_pattern python or find_ports_for_pattern server.py --extensions
@@ -141,11 +160,6 @@ function fcontent() {
 
 
 
-# NVM
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
 
 # Default editor
 export EDITOR="nvim"
@@ -163,6 +177,7 @@ export NODE_EXTRA_CA_CERTS=/home/jrjl/repos/work/BraiNN/src/WebClient/ca-certifi
 # hook direnv into ZSH
 # export BAT_CONFIG_PATH="$HOME/.config/bat.conf"
 
+export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window down:3:hidden:wrap --bind '?:toggle-preview'"
 # Combine fzf ctrl-t with batcat (bat)
 export FZF_DEFAULT_COMMAND='fd --type file --follow --hidden --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
@@ -178,36 +193,6 @@ awsyaml () {
 # dont show user@computer in terminal
 export PS1="\W \$ "
 
-# nvm
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-
-# place this after nvm initialization!
-autoload -U add-zsh-hook
-
-load-nvmrc() {
-  local nvmrc_path
-  nvmrc_path="$(nvm_find_nvmrc)"
-
-  if [ -n "$nvmrc_path" ]; then
-    local nvmrc_node_version
-    nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
-
-    if [ "$nvmrc_node_version" = "N/A" ]; then
-      nvm install
-    elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
-      nvm use
-    fi
-  elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
-    echo "Reverting to nvm default version"
-    nvm use default
-  fi
-}
-
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
-
-
 # Quicky switch between directories with different tmux sessions
 # Bind Ctrl+j to run tmux-sessionizer (under /usr/local/bin)
 # custom-cd() { BUFFER="tmux-sessionizer"; zle accept-line;  }
@@ -218,7 +203,7 @@ load-nvmrc
 eval "$(~/.local/bin/mise activate zsh)"
 
 #
-. "$HOME/.local/bin/env"
+#. "$HOME/.local/bin/env"
 
 # Zoxide for cd navigation (instead of zsh z)
 eval "$(zoxide init zsh)"
