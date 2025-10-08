@@ -90,7 +90,30 @@ clean_docker_images() {
   done
 }
 
+# Enable docker completion
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
+
+# Word navigation
+bindkey "^[[1;5C" forward-word   # Ctrl + Right Arrow
+bindkey "^[[1;5D" backward-word  # Ctrl + Left Arrow
+
+
+# histfile
+HISTFILE=~/.zsh_history
+export HISTSIZE=10000
+export SAVEHIST=20000
+export HISTFILE=~/.zsh_history
+
+# History options
+setopt HIST_IGNORE_DUPS      # Don't save duplicates
+setopt HIST_IGNORE_ALL_DUPS  # Remove older duplicates
+setopt HIST_SAVE_NO_DUPS     # Don't save duplicates to file
+setopt HIST_FIND_NO_DUPS     # Don't show duplicates when searching
+setopt SHARE_HISTORY         # Share history between sessions
+setopt APPEND_HISTORY        # Append to history file
+setopt INC_APPEND_HISTORY    # Add commands immediately
 
 # History search
 # Bind the up and down arrow keys to search through your history for commands that start with whatever you've already typed:
@@ -164,6 +187,7 @@ export NODE_EXTRA_CA_CERTS=/home/jrjl/repos/work/BraiNN/src/WebClient/ca-certifi
 # export BAT_CONFIG_PATH="$HOME/.config/bat.conf"
 
 # Combine fzf ctrl-t with batcat (bat)
+export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window down:3:hidden:wrap --bind '?:toggle-preview'"
 export FZF_DEFAULT_COMMAND='fd --type file --follow --hidden --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers,changes --line-range :500 {}' --preview-window=right:60% --bind='ctrl-o:execute(vim {})+abort'"
