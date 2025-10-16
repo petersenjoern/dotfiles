@@ -1,1 +1,1 @@
-anthropic_claude_sonnet_4_v1_0
+gemini-2.5-flash-lite
