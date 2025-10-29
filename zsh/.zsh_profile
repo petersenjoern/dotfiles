@@ -3,6 +3,7 @@ VIM="nvim"
 
 PERSONAL=$XDG_CONFIG_HOME/personal
 DEV_ENV=$HOME/repos/personal/dotfiles
+
 for i in `find -L $PERSONAL`; do
     source $i
 done
@@ -14,11 +15,6 @@ source ~/.local/share/fzf/completion.zsh
 
 export GOPATH=$HOME/.local/go
 export GIT_EDITOR=$VIM
-export DEV_ENV_HOME="$HOME/repos/personal/dotfiles"
-
-dev_env() {
-
-}
 
 catr() {
     tail -n "+$1" $3 | head -n "$(($2 - $1 + 1))"
