@@ -62,43 +62,40 @@ rm $HOME/.local/scripts/dev-env # this is not to be confused with dev-env-omarch
 copy $DEV_ENV/env/.xprofile $HOME/.xprofile
 copy $DEV_ENV/env/.tmux-sessionizer $HOME/.tmux-sessionizer
 
-## zsh
+# zsh
 copy $DEV_ENV/zsh/.zshrc $HOME/.zshrc
 copy $DEV_ENV/zsh/.zsh_profile $HOME/.zsh_profile
 copy $DEV_ENV/zsh/.p10k.zsh $HOME/.p10k.zsh
 mkdir -p "$HOME/.oh-my-zsh/plugins/correction"
 copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/plugins/correction/correction.zsh
 
-## vscode
+# vscode
 copy $DEV_ENV/vscode/settings.json $HOME/.config/Code/User/settings.json
 copy $DEV_ENV/vscode/keybindings.json $HOME/.config/Code/User/keybindings.json
-
-# # Glazewm
-# copy $DEV_ENV/glazewm/config.yaml $WIN_HOME/.glzr/glazewm/config.yaml
 
 # alacritty
 copy $DEV_ENV/alacritty/alacritty-omarchy.toml $HOME/.config/alacritty/alacritty.toml
 
-# ## bat
-# copy /usr/bin/batcat $HOME/.local/bin/bat
+# bat
+copy /usr/bin/bat $HOME/.local/bin/bat
 
-# ## fd
+# fd
 # copy "$(which fdfind)" $HOME/.local/bin/fd
 
-## fzf
+# fzf
 mkdir -p $HOME/.local/share/fzf
 copy $DEV_ENV/fzf/key-bindings.zsh $HOME/.local/share/fzf/key-bindings.zsh
 copy $DEV_ENV/fzf/completion.zsh $HOME/.local/share/fzf/completion.zsh
 
-## git
+# git
 copy $DEV_ENV/git/.gitconfig $HOME/.config/git/config
 copy $DEV_ENV/git/.gitignore $HOME/.gitignore
 
-## tmux
+# tmux
 copy $DEV_ENV/tmux/.tmux.conf $HOME/.tmux.conf
 tmux source-file $HOME/.tmux.conf
 
-# ## claude code
+# claude code
 # copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
 # copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
 # update_files $DEV_ENV/claude $HOME/.claude/

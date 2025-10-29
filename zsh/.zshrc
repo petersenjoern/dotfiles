@@ -156,9 +156,9 @@ function fcontent() {
 
   # Use ripgrep if available, else fall back to grep
   if command -v rg &> /dev/null; then
-    rg --column --line-number --no-heading --color=always --smart-case "$pattern" "$dir" | fzf --ansi --delimiter : --preview 'batcat --style=numbers --color=always {1}:{2}'
+    rg --column --line-number --no-heading --color=always --smart-case "$pattern" "$dir" | fzf --ansi --delimiter : --preview 'bat --style=numbers --color=always {1}:{2}'
   else
-    grep -rnw "$dir" -e "$pattern" | fzf --ansi --delimiter : --preview 'batcat --style=numbers --color=always {1}:{2}'
+    grep -rnw "$dir" -e "$pattern" | fzf --ansi --delimiter : --preview 'bat --style=numbers --color=always {1}:{2}'
   fi
 }
 
@@ -177,7 +177,6 @@ export SUDO_EDITOR="$EDITOR"
 # Certificates
 export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 export SSL_CERT_DIR=/etc/ssl/certs/
-export NODE_EXTRA_CA_CERTS=/home/jrjl/repos/work/BraiNN/src/WebClient/ca-certificates.crt
 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
@@ -186,7 +185,7 @@ export NODE_EXTRA_CA_CERTS=/home/jrjl/repos/work/BraiNN/src/WebClient/ca-certifi
 # hook direnv into ZSH
 # export BAT_CONFIG_PATH="$HOME/.config/bat.conf"
 
-# Combine fzf ctrl-t with batcat (bat)
+# Combine fzf ctrl-t with bat (bat)
 export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window down:3:hidden:wrap --bind '?:toggle-preview'"
 export FZF_DEFAULT_COMMAND='fd --type file --follow --hidden --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
