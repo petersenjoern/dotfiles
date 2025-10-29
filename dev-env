@@ -85,7 +85,7 @@ copy $DEV_ENV/glazewm/config.yaml $WIN_HOME/.glzr/glazewm/config.yaml
 copy $DEV_ENV/alacritty/alacritty.toml $WIN_HOME/AppData/Roaming/alacritty/alacritty.toml
 
 ## bat
-copy /usr/bin/batcat $HOME/.local/bin/bat
+copy /usr/bin/bat $HOME/.local/bin/bat
 
 ## fd
 copy "$(which fdfind)" $HOME/.local/bin/fd
