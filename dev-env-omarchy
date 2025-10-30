@@ -77,7 +77,7 @@ copy $DEV_ENV/vscode/keybindings.json $HOME/.config/Code/User/keybindings.json
 copy $DEV_ENV/alacritty/alacritty-omarchy.toml $HOME/.config/alacritty/alacritty.toml
 
 # bat
-copy /usr/bin/bat $HOME/.local/bin/bat
+# copy /usr/bin/bat $HOME/.local/bin/bat
 
 # fd
 # copy "$(which fdfind)" $HOME/.local/bin/fd
@@ -103,4 +103,4 @@ tmux source-file $HOME/.tmux.conf
 # keybindings
 copy $DEV_ENV/key-mapping/input.conf $HOME/.config/hypr/
 copy $DEV_ENV/hypr/bindings.conf $HOME/.config/hypr/
-copy $DEV_ENV/hypr/tiling.conf $HOME/.local/share/omarchy/default/hypr/bindings/
+copy $DEV_ENV/hypr/tiling-v2.conf $HOME/.local/share/omarchy/default/hypr/bindings/
