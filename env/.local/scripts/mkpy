@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 <filename>" >&2
+  exit 1
+elif [ -e "$1" ]; then
+  echo "Error: '$1' already exists." >&2
+  exit 1
+fi
+
+# Define the template content without the bash shell commands
+TEMPLATE_CONTENT='#!/usr/bin/env python3
+
+def main():
+    print("hello world")
+
+if __name__ == "__main__":
+    main()
+'
+
+echo "$TEMPLATE_CONTENT" > "$1"
+
+chmod u+x "$1"
+
+EDITOR="${EDITOR:-nvim}"
+
+echo "Created executable Python script: $1"
+"$EDITOR" "$1"
+
