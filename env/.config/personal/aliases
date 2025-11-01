@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
 
 # File system
-alias g='git'
-alias ls='eza -lh --group-directories-first --icons=auto'
-alias lsa='ls -a'
-alias lt='eza --tree --level=2 --long --icons --git'
-alias lta='lt -a'
-alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
-alias q='exit'
+alias g="git"
+alias ls="eza -lh --group-directories-first --icons=auto"
+alias lsa="ls -a"
+alias lt="eza --tree --level=2 --long --icons --git"
+alias lta="lt -a"
+alias ff="fzf --preview "bat --style=numbers --color=always {}""
+alias q="exit"
 
 # Directories
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias ,,='cd ..'
-alias ..l='cd .. && ls'
-alias :q='exit'
-alias cd..='cd ..'
-alias mdkir='mkdir'
-alias dc='cd'
-alias sl='ls'
-alias sudp='sudo'
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias ,,="cd .."
+alias ..l="cd .. && ls"
+alias :q="exit"
+alias cd..="cd .."
+alias mdkir="mkdir"
+alias dc="cd"
+alias sl="ls"
+alias sudp="sudo"
 
 alias nsmi=nvidia-smi
 alias v=aws-vault
-# alias cb="xclip -sel clip" #Ubuntu
-alias cb='wl-copy' #Wayland on Archlinux
+alias cb="copy"
+alias c="copy"
+alias p="pasta"
 alias v="$EDITOR"
 alias vi="$EDITOR"
 alias vim="$EDITOR"
