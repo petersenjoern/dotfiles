@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+import sys
+import re
+
+def main() -> None:
+    input_text = sys.stdin.read()
+    code_blocks = _extract_llm_code_blocks(input_text)
+    for block in code_blocks:
+        print(block.strip())
+        print()
+
+
+def _extract_llm_code_blocks(text: str) -> list[str]:
+    # Captures the content between the opening and closing backticks.
+    # The `re.DOTALL` flag makes the dot match newline characters.
+    code_block_pattern = re.compile(r"```(?:\w+)?\s*\n(.*?)\n```", re.DOTALL)
+
+    matches = code_block_pattern.findall(text)
+    if not matches:
+        return []
+
+    return matches
+
+if __name__ == "__main__":
+    main()
+
