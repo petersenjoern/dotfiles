@@ -17,12 +17,32 @@
     editor = vim
 [push]
     default = simple
+[pull]
+  rebase = true
 [filter "tabspace"]
     clean = expand --tabs=4 --initial
 [filter "lfs"]
     smudge=git-lfs smudge -- %f
     process=git-lfs filter-process
     required=True
+
+[color "diff"]
+  meta = 0 123
+  frag = 0
+  old = 0 218
+  oldMoved = 0 218
+  new = 0 121
+  newMoved = 0 183
+  whitespace = red reverse
+
+[color "status"]
+  added = 2
+  changed = 13
+  untracked = 3
+  branch = 12
+
+[log]
+  date = iso
 [alias]
 a = add -A
 ap = !git add -p $(git status -s | cut -d' ' -f2- | fzf -m)
@@ -57,10 +77,50 @@ wipr = for-each-ref --sort='committerdate:iso8601' --format=' %(color:yellow)%(c
 wip = for-each-ref --sort='committerdate:iso8601' --format=' %(color:yellow)%(committerdate:relative)%09%(color:white)%(refname:short)' refs/heads/
 t = tag
 td = tag -d
-pr = "!brainn pr"
+pr = "!gh pr create --fill"
 cb = "!brainn branch"
 sup = submodule update
 most-recent-tag = "describe --tags --abbrev=0"
 branch-name = "!git rev-parse --abbrev-ref HEAD"
 rebase-master = !CURRENT=$(git branch-name) && git cop master && git co $CURRENT && git rebase master
 fco = "!git checkout $(git branch --sort='-committerdate:iso8601' | fzf)"
+whoami = !git config user.name && git config user.email
+l = log --graph --pretty=format:'%C(45)%s%Creset %C(white)%an, %ar%Creset %C(240)%h%Creset'
+
+# typos
+ad = add
+bisec = bisect
+bisetc = bisect
+branhc = branch
+breach = branch
+breanch = branch
+checkotu = checkout
+checkou = checkout
+checout = checkout
+cherrypick = cherry-pick
+cloen = clone
+comit = commit
+comitt = commit
+committ = commit
+dif = diff
+fetc = fetch
+fethc = fetch
+greo = grep
+grp = grep
+grpe = grep
+hceckout = checkout
+mereg = merge
+merg = merge
+puhs = push
+rbanch = branch
+stat = status
+statis = status
+stats = status
+statsu = status
+statsus = status
+statu = status
+statys = status
+stauts = status
+sttus = status
+submodules = submodule
+tags = tag
