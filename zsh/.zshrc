@@ -211,3 +211,6 @@ eval "$(/usr/bin/mise activate zsh)"
 
 # Zoxide for cd navigation (instead of zsh z)
 eval "$(zoxide init zsh)"
+
+# Add LLM CLI command completion
+eval "$(llm cmdcomp --init zsh)"

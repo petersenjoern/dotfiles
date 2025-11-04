@@ -1,0 +1,30 @@
+
+[tools]
+python = "3.13"
+uv = "0.6.5"
+
+[tasks.install-deps]
+description = "Install dependencies"
+run = [
+    """
+    #!/bin/bash
+    uv tool install llm \
+        --with llm-cmd \
+        --with llm-jq \
+        --with llm-gemini \
+        --with llm-anthropic \
+        --with llm-cmd-comp \
+        --reinstall
+    """
+]
+
+[tasks.setup]
+description = "Setup LLM CLI to my liking"
+run = [
+    """
+    #!/bin/bash
+    echo "setting default llm model to gemini-2.5-flash-lite"
+    llm models default gemini-2.5-flash-lite
+    echo "set your keys under $(llm keys path)"
+    """
+]
