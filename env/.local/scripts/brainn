@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-export PYTHONPATH=~/repos/work/devops-toolkit
-~/repos/work/devops-toolkit/venv/bin/python ~/repos/work/devops-toolkit/cli/main.py $@
