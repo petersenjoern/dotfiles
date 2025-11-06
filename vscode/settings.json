@@ -48,46 +48,70 @@
   "vim.normalModeKeyBindingsNonRecursive": [
     // NAVIGATION
     // Harpoon
+    // Add current file to Harpoon list (Convention: <leader>a)
     {
-      "before": ["<leader>", "h", "a"],
+      "before": ["<leader>", "a"],
       "commands": ["vscode-harpoon.addEditor"]
     },
+    // Toggle Harpoon UI (Convention: <C-e>)
     {
-      "before": ["<leader>", "h", "e"],
-      "commands": ["vscode-harpoon.editEditors"]
-    },
-    {
-      "before": ["<leader>", "h", "o"],
+      "before": ["<C-e>"],
       "commands": ["vscode-harpoon.editorQuickPick"]
     },
     {
-      "before": ["<leader>", "h", "p"],
-      "commands": ["vscode-harpoon.gotoPreviousHarpoonEditor"]
+      "before": ["<leader>", "e"],
+      "commands": ["vscode-harpoon.editEditors"]
     },
+    // Navigate to specific Harpoon entries (Convention: <C-h>, <C-t>, <C-n>, <C-s> in lua)
     {
-      "before": ["<leader>", "h", "l"],
-      "commands": ["vscode-harpoon.listEditors"]
-    },
-    {
-      "before": ["<leader>", "h", "t"],
-      "commands": ["vscode-harpoon.toggleEditorList"]
-    },
-    {
-      "before": ["<leader>", "h", "1"],
+      "before": ["<C-h>"],
       "commands": ["vscode-harpoon.gotoEditor1"]
     },
     {
-      "before": ["<leader>", "h", "2"],
+      "before": ["<C-b>"],
       "commands": ["vscode-harpoon.gotoEditor2"]
     },
     {
-      "before": ["<leader>", "h", "3"],
+      "before": ["<C-n>"],
       "commands": ["vscode-harpoon.gotoEditor3"]
     },
     {
-      "before": ["<leader>", "h", "4"],
+      "before": ["<C-m>"],
       "commands": ["vscode-harpoon.gotoEditor4"]
     },
+    // Replace specific Harpoon entries (Convention: <leader><C-h>, <leader><C-t>, etc.)
+    {
+      "before": ["<leader>", "<C-h>"],
+      "commands": ["vscode-harpoon.addEditor1"]
+    },
+    {
+      "before": ["<leader>", "<C-b>"],
+      "commands": ["vscode-harpoon.addEditor2"]
+    },
+    {
+      "before": ["<leader>", "<C-n>"],
+      "commands": ["vscode-harpoon.addEditor3"]
+    },
+    {
+      "before": ["<leader>", "<C-m>"],
+      "commands": ["vscode-harpoon.addEditor4"]
+    },
+    // {
+    //   "before": ["<leader>", "h", "1"],
+    //   "commands": ["vscode-harpoon.gotoEditor1"]
+    // },
+    // {
+    //   "before": ["<leader>", "h", "2"],
+    //   "commands": ["vscode-harpoon.gotoEditor2"]
+    // },
+    // {
+    //   "before": ["<leader>", "h", "3"],
+    //   "commands": ["vscode-harpoon.gotoEditor3"]
+    // },
+    // {
+    //   "before": ["<leader>", "h", "4"],
+    //   "commands": ["vscode-harpoon.gotoEditor4"]
+    // },
     {
       "before": ["<leader>", "h", "5"],
       "commands": ["vscode-harpoon.gotoEditor5"]
@@ -158,7 +182,7 @@
       "commands": ["testing.debugAtCursor"]
     },
     {
-      "before": ["<leader>", "f", "e"],
+      "before": ["<leader>", "p", "v"],
       "commands": ["workbench.view.explorer"]
     },
     {

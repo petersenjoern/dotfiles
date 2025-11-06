@@ -61,10 +61,11 @@
     "when": "terminalFocus"
   },
   // FILE TREE
-  {
-    "command": "workbench.action.toggleSidebarVisibility",
-    "key": "ctrl+e"
-  },
+  // toggleSiderbarVisibility (ctrl e) has been replace by harpoon
+  // {
+  //   "command": "workbench.action.toggleSidebarVisibility",
+  //   "key": "ctrl+e"
+  // },
   // {
   //   "command": "workbench.files.action.focusFilesExplorer",
   //   "key": "ctrl+e",
