@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ctimer stands for check timer
+set -e
+set -u
+set -o pipefail
+
+# this assumes that timer is used,
+# which is writing stdout to ~/timer.log
+cat ~/timer.log

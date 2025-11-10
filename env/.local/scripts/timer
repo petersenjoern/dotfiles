@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+if [ "$#" -eq 0 ]; then
+  echo "Usage: timer <timer_arguments>"
+  echo "Example: timer 2min"
+  exit 1
+fi
+
+TIMER_EXECUTABLE="$HOME/.local/scripts/settimer"
+
+# redirection and backgrounding
+"$TIMER_EXECUTABLE" "$@" > ~/timer.log 2>&1 &
+
+echo "$@ Timer started in the background. Log file: ~/timer.log"
+

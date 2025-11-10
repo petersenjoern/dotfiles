@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+usage() {
+  echo "Usage: settimer <time>"
+  echo "  <time> can be specified in minutes (e.g., '5min') or seconds (e.g., '30sec')."
+  echo "  Alternatively, you can provide a plain number, which will be interpreted as minutes."
+  exit 0
+}
+
+get_timestamp() {
+  date +"%H:%M:%S"
+}
+
+parse_time() {
+  local input="$1"
+  local seconds=""
+
+  if [[ "$input" =~ ^[1-9][0-9]*min$ ]]; then
+    # convert minutes to seconds
+    local minutes="${input%min}"
+    seconds=$(( minutes * 60 ))
+  elif [[ "$input" =~ ^[1-9][0-9]*sec$ ]]; then
+    seconds="${input%sec}"
+  elif [[ "$input" =~ ^[1-9][0-9]*$ ]]; then
+    # If no suffix, assume minutes
+    seconds=$(( input * 60 ))
+  else
+    echo "Error: Invalid time format. Please use '5min', '30sec', or a plain number for minutes."
+    exit 1
+  fi
+
+  if ! [[ "$seconds" =~ ^[0-9]+$ ]]; then
+    echo "Error: Invalid numeric value for time."
+    exit 1
+  fi
+
+  echo "$seconds"
+}
+
+if [ -z "$1" ]; then
+  usage
+fi
+
+total_seconds=$(parse_time "$1")
+if [ -z "$total_seconds" ]; then
+    exit 1
+fi
+
+display_minutes=$((total_seconds / 60))
+display_remaining_seconds=$((total_seconds % 60))
+
+if [ "$display_remaining_seconds" -eq 0 ]; then
+  echo "[$(get_timestamp)] Timer set for $display_minutes minute(s) ($total_seconds seconds)..."
+else
+  echo "[$(get_timestamp)] Timer set for $display_minutes minute(s) and $display_remaining_seconds second(s) ($total_seconds seconds)..."
+fi
+
+sleep "$total_seconds"
+
+# Visual notification
+if command -v notify-send &> /dev/null; then
+  notify-send "Timer Done!" "Your timer has finished." -i dialog-information
+else
+  echo "[$(get_timestamp)] Visual notification tool 'notify-send' not found. Install it for desktop notifications."
+fi
+
+# Audible notification
+SOUND_FILE="/usr/share/sounds/freedesktop/stereo/complete.oga"
+
+if command -v paplay &> /dev/null; then
+  if [ -f "$SOUND_FILE" ]; then
+    paplay "$SOUND_FILE"
+  else
+    echo "[$(get_timestamp)] Audible notification sound file not found at '$SOUND_FILE'."
+    echo "Please install a sound theme or specify a valid path to a .ogg or .wav file."
+  fi
+else
+  echo "[$(get_timestamp)] Audible notification tool 'paplay' not found. Install 'pulseaudio-utils' for sound."
+fi
+
+echo "[$(get_timestamp)] Timer finished."
+
+
