@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+
+show_help() {
+   echo "Usage: myip [OPTIONS]"
+   echo "Options:"
+   echo "  -l, --local    Display your local IP address."
+   echo "  -p, --public   Display your public IP address."
+   echo "  -h, --help     Display this help message."
+   echo ""
+   echo "If no option is provided, it defaults to displaying the local IP address."
+}
+
+get_local_ip() {
+   if command -v ip &> /dev/null
+   then
+       local_ip=$(ip addr show | grep -oP 'inet \K[\d.]+' | grep -v '127.0.0.1' | head -n 1)
+   else
+       local_ip=$(ifconfig | grep -oP 'inet addr:\K[\d.]+' | grep -v '127.0.0.1' | head -n 1)
+   fi
+   echo "$local_ip"
+}
+
+get_public_ip() {
+   public_ip=$(curl -s ifconfig.me)
+   echo "$public_ip"
+}
+
+show_local=true
+show_public=false
+
+while [[ "$#" -gt 0 ]]; do
+   case $1 in
+       -l|--local)
+           show_local=true
+           show_public=false
+           ;;
+       -p|--public)
+           show_local=false
+           show_public=true
+           ;;
+       -h|--help)
+           show_help
+           return 0
+           ;;
+       *)
+           echo "Error: Invalid option: $1" >&2
+           show_help
+           return 1
+           ;;
+   esac
+   shift
+done
+
+if "$show_local"; then
+   ip_address=$(get_local_ip)
+   if [ -n "$ip_address" ]; then
+       echo "Your Local IP Address: $ip_address"
+   else
+       echo "Could not determine your local IP address." >&2
+   fi
+elif "$show_public"; then
+   ip_address=$(get_public_ip)
+   if [ -n "$ip_address" ]; then
+       echo "Your Public IP Address: $ip_address"
+   else
+       echo "Could not determine your public IP address. Check your internet connection." >&2
+   fi
+fi
+

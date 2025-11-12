@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+DEFAULT_SEARCH_ENGINE="google"
+
+usage() {
+  echo "Usage: search_or_ask [google|g|perplexity|p] <your query>"
+  echo ""
+  echo "Arguments:"
+  echo "  <search_engine>  The search engine to use. Options: google (or g), perplexity (or p)."
+  echo "                   Defaults to '$DEFAULT_SEARCH_ENGINE' if not provided."
+  echo "  <your query>     The search query."
+  exit 1
+}
+
+SEARCH_ENGINE=""
+QUERY=""
+
+if [ "$#" -eq 0 ]; then
+  usage
+elif [ "$#" -eq 1 ]; then
+  SEARCH_ENGINE="$DEFAULT_SEARCH_ENGINE"
+  QUERY="$1"
+else
+  SEARCH_ENGINE_INPUT=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+  QUERY="$2"
+  if [ "$#" -gt 2 ]; then
+    QUERY=$(echo "$*" | cut -d' ' -f2-)
+  fi
+
+  case "$SEARCH_ENGINE_INPUT" in
+    "google"|"g")
+      SEARCH_ENGINE="google"
+      ;;
+    "perplexity"|"p")
+      SEARCH_ENGINE="perplexity"
+      ;;
+    *)
+      echo "Error: Invalid search engine '$1'. Please use 'google' (or 'g') or 'perplexity' (or 'p')."
+      usage
+      ;;
+  esac
+fi
+
+ESCAPED_QUERY=$(echo "$QUERY" | sed 's/ /%20/g') # Encode spaces for URL
+
+case "$SEARCH_ENGINE" in
+  "google")
+    URL="https://www.google.com/search?q=$ESCAPED_QUERY"
+    ;;
+  "perplexity")
+    URL="https://www.perplexity.ai/?q=$ESCAPED_QUERY"
+    ;;
+  *)
+    echo "Internal error: Unexpected search engine '$SEARCH_ENGINE'."
+    exit 1
+    ;;
+esac
+
+if command -v chromium &> /dev/null; then
+  chromium "$URL"
+  echo "Opened: $URL in Chromium"
+else
+  xgd-open "$URL"
+fi
+
+
