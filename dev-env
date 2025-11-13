@@ -106,3 +106,6 @@ tmux source-file $HOME/.tmux.conf
 copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
 copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
 update_files $DEV_ENV/claude $HOME/.claude/
+
+# tig
+copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
