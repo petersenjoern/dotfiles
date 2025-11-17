@@ -4,6 +4,18 @@ if [[ "$(pwd)" == $HOME/repos ]]; then
     clear
     return
 fi
-tmux new-window -dn scratch-pad
+
+if ! tmux has-session -t scratch-pad 2>/dev/null; then
+    tmux new-window -dn scratch-pad
+fi
+
+CHEATSHEET_FILE="$DEV_ENV/cheatsheet.md"
+if ! tmux has-session -t cheatsheet 2>/dev/null; then
+    tmux new-window -dn cheatsheet
+    tmux send-keys -t cheatsheet "nvim \"$CHEATSHEET_FILE\"" C-m
+else
+    tmux send-keys -t cheatsheet "nvim \"$CHEATSHEET_FILE\"" C-m
+fi
+
 vim .
 clear
