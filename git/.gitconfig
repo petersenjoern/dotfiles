@@ -78,7 +78,6 @@ wip = for-each-ref --sort='committerdate:iso8601' --format=' %(color:yellow)%(co
 t = tag
 td = tag -d
 pr = "!gh pr create --fill"
-cb = "!brainn branch"
 sup = submodule update
 most-recent-tag = "describe --tags --abbrev=0"
 branch-name = "!git rev-parse --abbrev-ref HEAD"

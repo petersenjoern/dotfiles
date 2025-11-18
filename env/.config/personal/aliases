@@ -6,7 +6,7 @@ alias ls="eza -lh --group-directories-first --icons=auto"
 alias lsa="ls -a"
 alias lt="eza --tree --level=2 --long --icons --git"
 alias lta="lt -a"
-alias ff="fzf --preview "bat --style=numbers --color=always {}""
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
 alias q="exit"
 
 # Directories
@@ -27,10 +27,12 @@ alias v=aws-vault
 alias cb="copy"
 alias c="copy"
 alias p="pasta"
-alias v="$EDITOR"
 alias vi="$EDITOR"
 alias vim="$EDITOR"
 alias nvim="$EDITOR"
+
+alias llmjq="llm jq"
+alias llmcmd="llm cmd"
 
 
 # Scripts execution
