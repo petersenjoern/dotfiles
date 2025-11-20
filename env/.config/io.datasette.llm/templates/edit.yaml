@@ -9,7 +9,6 @@ system:
   \ This is very important to my career.\
   \ I am goiung to tip you 200USD for a better solution. "
 
-model: lite-nn-ailab-gpt4-turbo-128k
 prompt: >
   # CONTEXT #
   I want to edit $language code delimited by triple backtips with the new instructions delimited by triple stars.

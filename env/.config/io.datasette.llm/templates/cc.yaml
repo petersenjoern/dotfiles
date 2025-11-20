@@ -59,4 +59,3 @@ system:
   \                        [target] to specify version (stable, latest,\n      \
   \                             or specific version)"
 
-model: anthropic_claude_sonnet_4_v1_0

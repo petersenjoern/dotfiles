@@ -50,4 +50,3 @@ system:
   \              disable all output to stdout\n\nOptions:\n  -h, --help        \
   \                 display help for command"
 
-model: anthropic_claude_sonnet_4_v1_0

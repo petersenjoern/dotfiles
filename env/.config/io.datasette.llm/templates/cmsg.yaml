@@ -1,6 +1,5 @@
 system: "Software developer AI suggests commit messages based on user input."
 
-model: anthropic_claude_sonnet_4_v1_0
 prompt: >
   ### CONTEXT
   Write a short commit message for the git diff output delimited by triple backtips.

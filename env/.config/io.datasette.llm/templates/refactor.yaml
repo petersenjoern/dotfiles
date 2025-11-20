@@ -7,7 +7,6 @@ system:
   \ you try to answer a question. Don't insert #TODOs or placeholder comments,\
   \ write ALL the code."
 
-model: anthropic_claude_3_7_sonnet_v1_0
 prompt: >
   # CONTEXT #
   I want to refactor professional $language code delimited by triple backtips.

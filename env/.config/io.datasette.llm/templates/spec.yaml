@@ -6,7 +6,6 @@ system:
   \ explaining background context, assumptions, and step-by-step thinking BEFORE\
   \ you try to answer a question. "
 
-model: anthropic_claude_sonnet_4_v1_0
 prompt: >
   Now that we’ve wrapped up the brainstorming process, can you compile our
   findings into a comprehensive, developer-ready specification? Include all
