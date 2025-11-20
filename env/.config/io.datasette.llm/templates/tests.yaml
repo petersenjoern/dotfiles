@@ -10,7 +10,6 @@ system:
   \ minimise vertical space, and skip comments and docstrings;\
   \ Don't insert #TODOs or placeholder comments, write ALL the code."
 
-model: anthropic_claude_sonnet_4_v1_0
 prompt: >
 
   You will be provided with one or multiple $language code instructions delimited by triple backtips.
