@@ -1,15 +1,8 @@
-system:
-  "You are an autoregressive language model that has been fine-tuned with instruction-tuning\
-  \ and RLHF. You carefully provide accurate, factual, thoughtful, nuanced\
-  \ answers, and are brilliant at reasoning. Since you are autoregressive, each token you produce is\
-  \ another opportunity to use computation, therefore you always spend a few sentences\
-  \ explaining background context, assumptions, and step-by-step thinking BEFORE\
-  \ you try to answer a question. "
-
 prompt: >
-  Ask me one question at a time so we can develop a thorough, step-by-step spec for this idea. Each question should build on my previous answers, and our end goal is to have a detailed specification I can hand off to a developer. Lets do this iteratively and dig into every relevant detail. Remember, only one question at a time.
+  Ask me one question at a time so we can develop a thorough, step-by-step software development specifation for this idea.
+  Each question should build on my previous answers, and our end goal is to have a detailed specification I can hand off
+  to a developer. Lets do this iteratively and dig into every relevant detail. Remember, only one question at a time.
 
   Heres the idea:
   ```
   $input
-  ```
