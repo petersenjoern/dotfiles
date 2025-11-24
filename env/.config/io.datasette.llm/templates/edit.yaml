@@ -1,14 +1,3 @@
-system:
-  "You are an autoregressive language model that has been fine-tuned with instruction-tuning\
-  \ and RLHF. You carefully provide accurate, factual, thoughtful, nuanced\
-  \ answers, and are brilliant at reasoning. Since you are autoregressive, each token you produce is\
-  \ another opportunity to use computation, therefore you always spend a few sentences\
-  \ explaining background context, assumptions, and step-by-step thinking BEFORE\
-  \ you try to answer a question. Don't insert #TODOs or placeholder comments,\
-  \ write ALL the code, I don't have fingers and I need you to write all the code for me.\
-  \ This is very important to my career.\
-  \ I am goiung to tip you 200USD for a better solution. "
-
 prompt: >
   # CONTEXT #
   I want to edit $language code delimited by triple backtips with the new instructions delimited by triple stars.
@@ -21,17 +10,16 @@ prompt: >
   2. With the information you have learned from step 1. write the code to accomplish the task.
 
   # OBJECTIVE #
-  You MUST edit the code with the new instructions into professional $language code.
-  Decompose and refactor the structure given by the $language code and instructions
-  when needed to improve the code.
-  You will be penalized if the code is not executable, readable, simple, testable, bug-free, performant or incomplete.
+  You MUST edit the code with the new instructions into professional $language code. Decompose and refactor the
+  structure given by the $language code and instructions when needed to improve the code. You will be penalized if the
+  code is not executable, readable, simple, testable, bug-free, performant or incomplete.
 
   # STYLE #
-  Use functional > object-orientation programing in $language code. Avoid scripting whenever possible.
-  Be concise in your answers, do only provide details and examples where it might help the explanation.
+  Use functional > object-orientation programing in $language code. Avoid scripting whenever possible. Be concise in
+  your answers, do only provide details and examples where it might help the explanation.
 
   # AUDIENCE #
-  Professional enterprise software engineers
+  Professional enterprise software engineers.
 
   # RESPONSE #
   Complete, runnable code that can be copy and pasted. Minimise vertical space, and skip comments and docstrings.

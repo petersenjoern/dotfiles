@@ -27,15 +27,6 @@ prompt: >
 
   ### STYLE
   Technical and context specific to the git diff output.
-  examples:
-  - fix: Citeline: Trials: change empty value from {} to null
-  - chore: pip: Re-cache pip to avoid vulnerability issues
-  - refactor: all Dockerfiles: remove vulnerabilities
-  - chore: infrastructure/lambda: merge shared custom layers to one
-  - feat: axonn_handler: post error logs to Teams
-  - feat: target_list_router: Add exception handling
-  - test: Use locators for checking table loading in E2E tests
-  - chore: service/target_list: add list_target_lists()
 
   ### AUDIENCE
   Professional software developers.
