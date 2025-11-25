@@ -14,6 +14,7 @@ run = [
         --with llm-gemini \
         --with llm-anthropic \
         --with llm-cmd-comp \
+        --with llm-fragments-symbex \
         --reinstall
     """
 ]
