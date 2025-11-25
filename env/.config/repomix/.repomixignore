@@ -1,0 +1,7 @@
+*.log
+tmp/
+.venv/
+venv/
+.env
+.envrc
+

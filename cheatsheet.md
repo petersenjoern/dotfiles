@@ -35,10 +35,11 @@ sed -i '' 's/search/replace/g' file.go # Now do it for all go files in the proje
 
 ## Template
 llm -t find 'find all go files that contain the phrase hello world'
+llm -t repomix 'include the file under claude/hooks/*.py'
 
 ## Logs
 llm logs -c (current conversation)
-llm logs list -n 10 -s  
+llm logs list -n 10 -s
 llm logs --cid <id for specific conversation> (llm logs --cid 01k971ymkrcy9hkbvg130v7vsv --json | jq | nvim)
 llm logs -x (extract first fenced code block)
 llm logs --xl (extract last fenced code block)
@@ -69,4 +70,25 @@ h - Switch to help view
 s - Switch to status view
 c - Switch to stage view
 
+# Ripgrep
+## Often used
+rg "hello" --type py
+rg -l "hello" --type py | ffm
 
+
+# Repomix
+## Often used
+repomix --include "**/*.py" --ignore "**/*.log,tmp/" --style xml --no-file-summary --remove-empty-lines --stdout
+
+# OBS: piping into repomix --stdin is causing formatting issues in my tmux session.
+# instead of -stdin, find the files with the rg expression, and then write a new repomix --include expression
+rg --files-with-matches "hello" | repomix --stdin
+rg -l "hello" --type py | ffm | repomix --stdin
+
+# Symbex
+## Often used
+symbex -x ./.venv -d . -s --docs --typed
+symbex -x ./.venv -d . "*dang* --docs --typed
+symbex -x ./.venv -d . "*dang*" --docs --typed  >> repomix-output.xml
+symbex -x ./.venv -d . --docs --class -s
+symbex -x ./.venv -f ./hello.py --async -s --docs --typed
