@@ -1,0 +1,11 @@
+system:
+  "Summarize the following content concisely and clearly, preserving nuanced details. \
+  \ Use precise language to capture the essence of the material without losing important context.\
+  \ Aim for clarity and brevity while ensuring the summary remains informative and accurate.  "
+
+prompt: >
+  Provide a compact summary of the following content:
+
+  ```
+  $input
+  ```
