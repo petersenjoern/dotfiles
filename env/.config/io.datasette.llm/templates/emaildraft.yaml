@@ -1,0 +1,13 @@
+prompt: >
+  Review the email first draft.
+
+  Check that the tone is professional and look for phrases that could be
+  considered rude or insensitive.
+
+  Verify all facts, dates, and promises are accurate.
+
+  Then write the next draft of the email.
+
+  ```
+  $input
+  ```

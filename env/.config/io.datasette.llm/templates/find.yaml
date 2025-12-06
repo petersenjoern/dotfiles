@@ -1,0 +1,253 @@
+system:
+  "Always return the best fitting command for the request first, followed by an\
+  \ educational explanation of how the command is build up.\
+  \ Explain it in a way so that in the future I can memorize and generate commands\
+  \ like these myself. Keep it short and concise."
+
+
+prompt: >
+  Generate the most efficient search command for:
+
+  ```
+  $input
+  ```
+
+  Tools available to you are ripgrep (rg), find, grep.
+
+  # ripgrep (rg) - A fast recursive grepper
+  # SYNOPSIS
+  rg [OPTIONS] PATTERN [PATH ...]
+  rg [OPTIONS] -e PATTERN ... [PATH ...]
+  rg [OPTIONS] -f PATTERNFILE ... [PATH ...]
+  rg [OPTIONS] --files [PATH ...]
+  rg [OPTIONS] --type-list
+  command | rg [OPTIONS] PATTERN
+
+  # CORE FUNCTIONALITY
+  PATTERN: Regex to search for. Use -e or -- to handle patterns starting with '-'.
+  PATH: File or directory to search (recursive by default).
+
+  # INPUT OPTIONS
+  -e, --regexp=PATTERN: Search for PATTERN. Multiple allowed.
+  -f, --file=PATTERNFILE: Search patterns from a file (one per line).
+  --pre=COMMAND: Search output of COMMAND instead of file content.
+  --pre-glob=GLOB: Limit --pre to files matching GLOB.
+  -z, --search-zip: Search compressed files (gzip, bzip2, etc.).
+
+  # SEARCH OPTIONS
+  -s, --case-sensitive: Case-sensitive search (default).
+  --crlf: Treat CRLF as line terminator.
+  --dfa-size-limit=NUM: Regex DFA size limit.
+  -E, --encoding=ENCODING: Specify file encoding (e.g., auto, utf-8).
+  --engine=ENGINE: Regex engine (default, pcre2, auto).
+  -F, --fixed-strings: Treat PATTERN as literal string.
+  -i, --ignore-case: Case-insensitive search.
+  -v, --invert-match: Invert match (show non-matching lines).
+  -x, --line-regexp: Match entire line.
+  -m NUM, --max-count=NUM: Limit matches per file.
+  --mmap: Use memory mapping (default when beneficial).
+  -U, --multiline: Enable multiline search.
+  --multiline-dotall: '.' matches newline in multiline mode.
+  --no-unicode: Disable Unicode mode for regexes.
+  --null-data: Use NUL as line terminator.
+  -P, --pcre2: Use PCRE2 regex engine (for advanced features).
+  --regex-size-limit=NUM: Compiled regex size limit.
+  -S, --smart-case: Case-insensitive if PATTERN lowercase, else sensitive.
+  --stop-on-nonmatch: Stop reading file after non-match (if matches seen).
+  -a, --text: Search binary files as text.
+  -j NUM, --threads=NUM: Number of search threads (0=auto).
+  -w, --word-regexp: Match whole words.
+
+  # FILTER OPTIONS
+  --binary: Search binary files (even if NUL byte found).
+  -L, --follow: Follow symbolic links.
+  -g, --glob=GLOB: Include/exclude files/dirs matching GLOB (overrides others).
+  --glob-case-insensitive: Case-insensitive glob matching.
+  -., --hidden: Search hidden files/directories.
+  --iglob=GLOB: Case-insensitive glob matching.
+  --ignore-file=PATH: Path to additional ignore file.
+  --ignore-file-case-insensitive: Case-insensitive ignore file processing.
+  -d NUM, --max-depth=NUM: Limit directory traversal depth.
+  --max-filesize=NUM: Ignore files larger than NUM.
+  --no-ignore: Disable all ignore file processing.
+  --no-ignore-dot: Disable .ignore, .rgignore.
+  --no-ignore-exclude: Disable git's .git/info/exclude.
+  --no-ignore-files: Disable --ignore-file flags.
+  --no-ignore-global: Disable global gitignore.
+  --no-ignore-parent: Disable ignore files in parent dirs.
+  --no-ignore-vcs: Disable VCS ignore files (.gitignore).
+  --no-require-git: Respect VCS ignore files even outside repo.
+  --one-file-system: Do not cross file system boundaries.
+  -t TYPE, --type=TYPE: Search only specified file types.
+  -T TYPE, --type-not=TYPE: Do not search specified file types.
+  --type-add=TYPESPEC: Add custom file type glob.
+  --type-clear=TYPE: Clear file type globs for TYPE.
+  -u, --unrestricted: Reduce filtering (use up to 3 times).
+      -u: Equivalent to --no-ignore.
+      -uu: Equivalent to --no-ignore -./--hidden.
+      -uuu: Equivalent to --no-ignore -./--hidden --binary.
+
+  # OUTPUT OPTIONS
+  -A NUM, --after-context=NUM: Show NUM lines after match.
+  -B NUM, --before-context=NUM: Show NUM lines before match.
+  --block-buffered: Use block buffering (default for pipes/files).
+  -b, --byte-offset: Print byte offset before line.
+  --color=WHEN: Control color output (never, auto, always, ansi).
+  --colors=COLOR_SPEC: Custom color settings.
+  --column: Show column numbers (1-based).
+  -C NUM, --context=NUM: Show NUM lines before and after match.
+  --context-separator=SEPARATOR: String between non-contiguous context lines.
+  --field-context-separator=SEPARATOR: Separator for context line fields.
+  --field-match-separator=SEPARATOR: Separator for match line fields.
+  --heading: Print file path above matches (default for tty).
+  -h, --help: Show help (short/long).
+  --hostname-bin=COMMAND: Command to get hostname for hyperlinks.
+  --hyperlink-format=FORMAT: Format for hyperlinks.
+  --include-zero: With -c/--count, show files with zero matches.
+  --line-buffered: Always use line buffering (default for tty).
+  -n, --line-number: Show line numbers (1-based, default for tty).
+  -N, --no-line-number: Suppress line numbers.
+  -M NUM, --max-columns=NUM: Omit lines longer than NUM bytes.
+  --max-columns-preview: Preview long lines with -M.
+  -0, --null: Print NUL byte after file paths.
+  -o, --only-matching: Print only matched parts.
+  --path-separator=SEPARATOR: Set path separator (e.g., for cygwin).
+  --passthru: Print matching and non-matching lines.
+  -p, --pretty: Alias for --color=always --heading --line-number.
+  -q, --quiet: Suppress output, exit on first match.
+  -r REPLACEMENT, --replace=REPLACEMENT: Replace matches (no file modification).
+  --sort=SORTBY: Sort results ascending (path, modified, etc.).
+  --sortr=SORTBY: Sort results descending.
+  --trim: Remove leading ASCII whitespace.
+  --vimgrep: Vimgrep output format (can be verbose).
+  -H, --with-filename: Print filename (default for multiple files).
+  -I, --no-filename: Never print filename.
+  --sort-files: DEPRECATED. Use --sort=path.
+
+  # OUTPUT MODES
+  -c, --count: Print count of matching lines per file.
+  --count-matches: Print count of individual matches per file.
+  -l, --files-with-matches: Print only paths with matches.
+  --files-without-match: Print only paths without matches.
+  --json: Output results in JSON Lines format.
+
+  # LOGGING OPTIONS
+  --debug: Show debug messages.
+  --no-ignore-messages: Suppress ignore file parsing errors.
+  --no-messages: Suppress file opening/reading errors.
+  --stats: Print search statistics.
+  --trace: Show trace messages (more detail than --debug).
+
+  # OTHER BEHAVIORS
+  --files: Print files that would be searched (no search).
+  --generate=KIND: Generate output (man, completion scripts) and exit.
+  --no-config: Do not read configuration files.
+  --pcre2-version: Print PCRE2 version and exit.
+  --type-list: Show supported file types and globs.
+  -V, --version: Show ripgrep version and build info.
+
+
+  Usage: find [-H] [-L] [-P] [-Olevel] [-D debugopts] [path...] [expression]
+  Default path is the current directory; default expression is -print.
+  Expression may consist of: operators, options, tests, and actions.
+
+  Operators (decreasing precedence; -and is implicit where no others are given):
+        ( EXPR )   ! EXPR   -not EXPR   EXPR1 -a EXPR2   EXPR1 -and EXPR2
+        EXPR1 -o EXPR2   EXPR1 -or EXPR2   EXPR1 , EXPR2
+
+  Positional options (always true):
+        -daystart -follow -nowarn -regextype -warn
+
+  Normal options (always true, specified before other expressions):
+        -depth -files0-from FILE -maxdepth LEVELS -mindepth LEVELS
+        -mount -noleaf -xdev -ignore_readdir_race -noignore_readdir_race
+
+  Tests (N can be +N or -N or N):
+        -amin N -anewer FILE -atime N -cmin N -cnewer FILE -context CONTEXT
+        -ctime N -empty -false -fstype TYPE -gid N -group NAME -ilname PATTERN
+        -iname PATTERN -inum N -iwholename PATTERN -iregex PATTERN
+        -links N -lname PATTERN -mmin N -mtime N -name PATTERN -newer FILE
+        -nouser -nogroup -path PATTERN -perm [-/]MODE -regex PATTERN
+        -readable -writable -executable
+        -wholename PATTERN -size N[bcwkMG] -true -type [bcdpflsD] -uid N
+        -used N -user NAME -xtype [bcdpfls]
+
+  Actions:
+        -delete -print0 -printf FORMAT -fprintf FILE FORMAT -print
+        -fprint0 FILE -fprint FILE -ls -fls FILE -prune -quit
+        -exec COMMAND ; -exec COMMAND {} + -ok COMMAND ;
+        -execdir COMMAND ; -execdir COMMAND {} + -okdir COMMAND ;
+
+  Usage: grep [OPTION]... PATTERNS [FILE]...
+  Search for PATTERNS in each FILE.
+  Example: grep -i 'hello world' menu.h main.c
+  PATTERNS can contain multiple patterns separated by newlines.
+
+  Pattern selection and interpretation:
+    -E, --extended-regexp     PATTERNS are extended regular expressions
+    -F, --fixed-strings       PATTERNS are strings
+    -G, --basic-regexp        PATTERNS are basic regular expressions
+    -P, --perl-regexp         PATTERNS are Perl regular expressions
+    -e, --regexp=PATTERNS     use PATTERNS for matching
+    -f, --file=FILE           take PATTERNS from FILE
+    -i, --ignore-case         ignore case distinctions in patterns and data
+        --no-ignore-case      do not ignore case distinctions (default)
+    -w, --word-regexp         match only whole words
+    -x, --line-regexp         match only whole lines
+    -z, --null-data           a data line ends in 0 byte, not newline
+
+  Miscellaneous:
+    -s, --no-messages         suppress error messages
+    -v, --invert-match        select non-matching lines
+    -V, --version             display version information and exit
+        --help                display this help text and exit
+
+  Output control:
+    -m, --max-count=NUM       stop after NUM selected lines
+    -b, --byte-offset         print the byte offset with output lines
+    -n, --line-number         print line number with output lines
+        --line-buffered       flush output on every line
+    -H, --with-filename       print file name with output lines
+    -h, --no-filename         suppress the file name prefix on output
+        --label=LABEL         use LABEL as the standard input file name prefix
+    -o, --only-matching       show only nonempty parts of lines that match
+    -q, --quiet, --silent     suppress all normal output
+        --binary-files=TYPE   assume that binary files are TYPE;
+                              TYPE is 'binary', 'text', or 'without-match'
+    -a, --text                equivalent to --binary-files=text
+    -I                        equivalent to --binary-files=without-match
+    -d, --directories=ACTION  how to handle directories;
+                              ACTION is 'read', 'recurse', or 'skip'
+    -D, --devices=ACTION      how to handle devices, FIFOs and sockets;
+                              ACTION is 'read' or 'skip'
+    -r, --recursive           like --directories=recurse
+    -R, --dereference-recursive  likewise, but follow all symlinks
+        --include=GLOB        search only files that match GLOB (a file pattern)
+        --exclude=GLOB        skip files that match GLOB
+        --exclude-from=FILE   skip files that match any file pattern from FILE
+        --exclude-dir=GLOB    skip directories that match GLOB
+    -L, --files-without-match  print only names of FILEs with no selected lines
+    -l, --files-with-matches  print only names of FILEs with selected lines
+    -c, --count               print only a count of selected lines per FILE
+    -T, --initial-tab         make tabs line up (if needed)
+    -Z, --null                print 0 byte after FILE name
+
+  Context control:
+    -B, --before-context=NUM  print NUM lines of leading context
+    -A, --after-context=NUM   print NUM lines of trailing context
+    -C, --context=NUM         print NUM lines of output context
+    -NUM                      same as --context=NUM
+        --group-separator=SEP  print SEP on line between matches with context
+        --no-group-separator  do not print separator for matches with context
+        --color[=WHEN],
+        --colour[=WHEN]       use markers to highlight the matching strings;
+                              WHEN is 'always', 'never', or 'auto'
+    -U, --binary              do not strip CR characters at EOL (MSDOS/Windows)
+
+  When FILE is '-', read standard input.  If no FILE is given, read standard
+  input, but with -r, recursively search the working directory instead.  With
+  fewer than two FILEs, assume -h.  Exit status is 0 if any line is selected,
+  1 otherwise; if any error occurs and -q is not given, the exit status is 2.
+
+
+

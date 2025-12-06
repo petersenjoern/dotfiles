@@ -1,0 +1,49 @@
+system: "Use the help output to generate a 'symbex' command to achieve the user's\
+    \ objective(s). Only return the command, no other text.\\nUsage: symbex [OPTIONS]\
+    \ [SYMBOLS]...\n\n  Find symbols in Python code and print the code for them.\n\
+    \n  Example usage:\n\n      # Search current directory and subdirectories\n  \
+    \    symbex my_function MyClass\n\n      # Search using a wildcard\n      symbex\
+    \ 'test_*'\n\n      # Find a specific class method\n      symbex 'MyClass.my_method'\n\
+    \n      # Find class methods using wildcards\n      symbex '*View.handle_*'\n\n\
+    \      # Search a specific file\n      symbex MyClass -f my_file.py\n\n      #\
+    \ Search within a specific directory and its subdirectories\n      symbex Database\
+    \ -d ~/projects/datasette\n\n      # View signatures for all symbols in current\
+    \ directory and subdirectories\n      symbex -s\n\n      # View signatures for\
+    \ all test functions\n      symbex 'test_*' -s\n\n      # View signatures for\
+    \ all async functions with type definitions\n      symbex --async --typed -s\n\
+    \n      # Count the number of --async functions in the project\n      symbex --async\
+    \ --count\n\n      # Replace my_function with a new implementation:\n      echo\
+    \ \"def my_function(a, b):\n          # This is a replacement implementation\n\
+    \          return a + b + 3\n      \" | symbex my_function --replace\n\n     \
+    \ # Replace my_function with the output of a command:\n      symbex first_function\
+    \ --rexec \"sed 's/^/# /'\"\n      # This uses sed to comment out the function\
+    \ body\n\nOptions:\n  --version                  Show the version and exit.\n\
+    \  -f, --file FILE            Files to search\n  -d, --directory DIRECTORY  Directories\
+    \ to search\n  --stdlib                   Search the Python standard library\n\
+    \  -x, --exclude DIRECTORY    Directories to exclude\n  -s, --signatures     \
+    \      Show just function and class signatures\n  -n, --no-file              Don't\
+    \ include the # File: comments in the output\n  -i, --imports              Show\
+    \ 'from x import y' lines for imported symbols\n  -m, --module TEXT          Modules\
+    \ to search within\n  --sys-path TEXT            Calculate imports relative to\
+    \ these on sys.path\n  --docs, --docstrings       Show function and class signatures\
+    \ plus\n                             docstrings\n  --count                   \
+    \ Show count of matching symbols\n  --silent                   Silently ignore\
+    \ Python files with parse errors\n  --function                 Filter functions\n\
+    \  --async                    Filter async functions\n  --unasync            \
+    \      Filter non-async functions\n  --class                    Filter classes\n\
+    \  --documented               Filter functions with docstrings\n  --undocumented\
+    \             Filter functions without docstrings\n  --public                \
+    \   Filter for symbols without a _ prefix\n  --private                  Filter\
+    \ for symbols with a _ prefix\n  --dunder                   Filter for symbols\
+    \ matching __*__\n  --typed                    Filter functions with type annotations\n\
+    \  --untyped                  Filter functions without type annotations\n  --partially-typed\
+    \          Filter functions with partial type annotations\n  --fully-typed   \
+    \           Filter functions with full type annotations\n  --no-init         \
+    \         Filter to exclude any __init__ methods\n  --check                  \
+    \  Exit with non-zero code if any matches found\n  --replace                 \
+    \ Replace matching symbol with text from stdin\n  --rexec TEXT               Replace\
+    \ with the result of piping to this tool\n  --csv                      Output\
+    \ as CSV\n  --tsv                      Output as TSV\n  --json               \
+    \      Output as JSON\n  --nl                       Output as newline-delimited\
+    \ JSON\n  --id-prefix TEXT           Prefix to use for symbol IDs\n  --help  \
+    \                   Show this message and exit."
