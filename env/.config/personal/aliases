@@ -37,4 +37,4 @@ alias llmcmd="llm cmd"
 
 
 # Scripts execution
-alias cedit="claude --permission-mode acceptEdits --disallowTools Bash"
+alias cedit="claude --permission-mode acceptEdits --disallowedTools Bash"
