@@ -98,13 +98,19 @@ tmux source-file $HOME/.tmux.conf
 
 # claude code
 # copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
-# copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
-# update_files $DEV_ENV/claude $HOME/.claude/
+copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.jso
+mkdir -p $HOME/.claude/hooks
+copy $DEV_ENV/claude/hooks/pre_tool_use.py $HOME/.claude/hooks/
+#update_files $DEV_ENV/claude $HOME/.claude/
 
 # keybindings
 copy $DEV_ENV/key-mapping/input.conf $HOME/.config/hypr/
 copy $DEV_ENV/hypr/bindings.conf $HOME/.config/hypr/
 copy $DEV_ENV/hypr/tiling-v2.conf $HOME/.local/share/omarchy/default/hypr/bindings/
+
+# monitors
+copy $DEV_ENV/hypr/monitors.conf $HOME/.config/hypr/
+
 
 # tig
 copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
