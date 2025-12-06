@@ -1,14 +1,4 @@
 {
-  "env": {
-    "ANTHROPIC_AUTH_TOKEN": "${OPENAI_BASE_URL}",
-    "ANTHROPIC_BASE_URL": "http://0.0.0.0:4000",
-    "ANTHROPIC_MODEL": "anthropic_claude_sonnet_4_v1_0",
-    "ANTHROPIC_SMALL_FAST_MODEL": "openai_gpt41_mini",
-    "DISABLE_TELEMETRY": "1"
-  },
-  "feedbackSurveyState": {
-    "lastShownTime": 1753966596909
-  },
   "permissions": {
     "allow": [
       "Bash(mkdir:*)",
