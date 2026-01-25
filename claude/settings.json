@@ -1,29 +1,87 @@
 {
   "permissions": {
     "allow": [
+      "Skill(superpowers:writing-plans)",
+      "WebFetch(domain:turbopuffer.com)",
       "Bash(mkdir:*)",
-      "Bash(uv:*)",
       "Bash(find:*)",
-      "Bash(mv:*)",
       "Bash(grep:*)",
-      "Bash(npm:*)",
       "Bash(ls:*)",
       "Bash(cp:*)",
-      "Write",
-      "Edit",
-      "Bash(chmod:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(make check:*)",
+      "Bash(make test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(python -m py_compile:*)",
+      "Bash(python -m mypy:*)",
+      "Bash(ruff check:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run pyright:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv sync:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cat:$*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(~/secrets.sh)",
+      "Read(~/.zshrc)",
+      "Bash(git commit*)",
+      "Bash(git push*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+    "OTEL_METRICS_EXPORTER": "otlp"
+  },
+  "enabledPlugins": {
+    "pr-review-toolkit@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true
   },
   "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Awaiting your input'"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"\\(.tool_input.command) - \\(.tool_input.description // \"No description\")\"' >> ~/.claude/bash-command-log.txt"
+          }
+        ]
+      },
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/pre_tool_use.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit:*.py|Edit:*.ts|Edit:*.tsx",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "make lint || exit 2",
+            "timeout": 20
           }
         ]
       }

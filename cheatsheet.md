@@ -16,6 +16,9 @@ C-p and C-pf    - find files
 <leader>pv      - go to directory
 <leader>ps      - grep for word as file content
 
+## Other
+:cq             - exit with error code
+
 
 # LLM CLI
 ## Generic

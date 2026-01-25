@@ -193,6 +193,7 @@ export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers,changes --
 
 # aws-vault
 export AWS_VAULT_BACKEND=file
+export AWS_SESSION_TOKEN_TTL=8h
 export AWS_VAULT_FILE_PASSPHRASE=this_is_PASSWORD!
 awsyaml () {
         aws-vault export --format ini "$1" | sed -e "s/\[$1\]/\[default\]/g" | tee ~/.aws/credentials
