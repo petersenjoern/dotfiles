@@ -63,6 +63,46 @@ def is_dangerous_rm_command(command: str) -> bool:
     return False
 
 
+def check_env_var_lookup(command: str) -> bool:
+    """
+    Detect attempts to read/print environment variable contents.
+    Blocks patterns like: echo $VAR, cat $VAR, printenv, env | grep, etc.
+    """
+    patterns = [
+        # Direct variable printing
+        r"\becho\s+.*\$[A-Za-z_][A-Za-z0-9_]*",  # echo $VAR
+        r"\bprintf\s+.*\$[A-Za-z_][A-Za-z0-9_]*",  # printf $VAR
+        r'\becho\s+.*"\$[A-Za-z_][A-Za-z0-9_]*"',  # echo "$VAR"
+        r"\becho\s+.*'\$[A-Za-z_][A-Za-z0-9_]*'",  # echo '$VAR'
+        # cat with variable (could be used to cat a file path from env var)
+        r"\bcat\s+\$[A-Za-z_][A-Za-z0-9_]*",  # cat $VAR
+        # printenv and env commands
+        r"\bprintenv\b",  # printenv (with or without args)
+        r"\benv\s*\|",  # env | grep, env | less, etc.
+        r"\benv\s*$",  # standalone env command
+        r"\bset\s*\|",  # set | grep (shows all variables)
+        r"\bdeclare\s+-[px]",  # declare -p, declare -x (exports)
+        r"\bexport\s+-p",  # export -p (show exports)
+        r"\bcompgen\s+-v",  # compgen -v (list variable names)
+        # eval with variables
+        r"\beval\s+.*\$[A-Za-z_][A-Za-z0-9_]*",  # eval $VAR
+        # Subshell variable extraction
+        r"\$\([^)]*\$[A-Za-z_][A-Za-z0-9_]*[^)]*\)",  # $(echo $VAR)
+        # Here-string/heredoc with variables
+        r"<<<\s*\$[A-Za-z_][A-Za-z0-9_]*",  # <<< $VAR
+        # Variable indirect reference
+        r"\$\{![A-Za-z_][A-Za-z0-9_]*",  # ${!VAR} indirect expansion
+        # Reading into variable from env
+        r"\bread\s+.*<<<.*\$[A-Za-z_]",  # read var <<< $OTHER
+    ]
+
+    for pattern in patterns:
+        if re.search(pattern, command, re.IGNORECASE):
+            return True
+
+    return False
+
+
 def check_sensitive_file_access(tool_name: str, tool_input: dict[str, str]) -> bool:
     """
     Check if any tool is trying to access .env files containing sensitive data.
@@ -121,7 +161,7 @@ def main():
             print("Use .env.sample for template files instead", file=sys.stderr)
             sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
 
-        # Check for dangerous rm -rf commands
+        # Check for Bash-specific dangerous patterns
         if tool_name == "Bash":
             command = tool_input.get("command", "")
 
@@ -129,6 +169,18 @@ def main():
             if is_dangerous_rm_command(command):
                 print(
                     "BLOCKED: Dangerous rm command detected and prevented",
+                    file=sys.stderr,
+                )
+                sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
+
+            # Block environment variable content lookup
+            if check_env_var_lookup(command):
+                print(
+                    "BLOCKED: Reading environment variable contents is prohibited",
+                    file=sys.stderr,
+                )
+                print(
+                    "Environment variables may contain secrets and should not be accessed directly",
                     file=sys.stderr,
                 )
                 sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude

@@ -41,7 +41,7 @@
   "vim.highlightedyank.duration": 250,
   "vim.leader": "<Space>",
   "vim.smartRelativeLine": true,
-  "vim.textwidth": 120,
+  "vim.textwidth": 88,
   "vim.hlsearch": true,
   "vscode-neovim.neovimExecutablePaths.linux": "/usr/bin/nvim",
   "vscode-neovim.useWSL": true,
