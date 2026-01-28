@@ -8,8 +8,6 @@ vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
 -- Move selected lines up in visual mode | Trigger: K (in visual mode)
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
--- Run Plenary test file | Trigger: SPACE + t + f
-vim.api.nvim_set_keymap("n", "<leader>tf", "<Plug>PlenaryTestFile", { noremap = false, silent = false })
 
 -- Join lines but keep cursor position (mark z, join, return to mark) | Trigger: J (in normal mode)
 vim.keymap.set("n", "J", "mzJ`z")
@@ -45,6 +43,8 @@ vim.keymap.set("i", "<C-c>", "<Esc>")
 
 -- Disable Q (ex mode) | Trigger: Q (disabled)
 vim.keymap.set("n", "Q", "<nop>")
+-- Disable command-line window | Trigger: q: (disabled)
+vim.keymap.set("n", "q:", "<nop>")
 -- Open tmux sessionizer | Trigger: CTRL + f
 vim.keymap.set("n", "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>")
 -- Format current buffer | Trigger: SPACE + f
@@ -60,6 +60,8 @@ vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz")
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
 -- Previous location list item and center cursor | Trigger: SPACE + j
 vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
+-- Close quickfix list | Trigger: SPACE + q
+vim.keymap.set("n", "<leader>q", "<cmd>cclose<CR>")
 
 -- Search and replace word under cursor | Trigger: SPACE + s
 vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
@@ -103,3 +105,6 @@ end)
 vim.keymap.set("n", "<leader><leader>", function()
     vim.cmd("so")
 end)
+
+-- Save file | Trigger: CTRL + s (normal/insert mode)
+vim.keymap.set({"n", "i"}, "<C-s>", "<cmd>w<CR>")

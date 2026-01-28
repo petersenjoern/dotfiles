@@ -4,6 +4,7 @@ return {
         require("cloak").setup({
             enabled = true,
             cloak_character = "*",
+            cloak_telescope = true,
             -- The applied highlight group (colors) on the cloaking, see `:h highlight`.
             highlight_group = "Comment",
             patterns = {

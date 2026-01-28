@@ -26,10 +26,6 @@ return {
     },
 
     config = function()
-        require("conform").setup({
-            formatters_by_ft = {
-            }
-        })
         local cmp = require('cmp')
         local cmp_lsp = require("cmp_nvim_lsp")
         local capabilities = vim.tbl_deep_extend(
@@ -45,6 +41,8 @@ return {
                 "lua_ls",
                 "rust_analyzer",
                 "gopls",
+                "basedpyright",
+                "ruff",
             },
             handlers = {
                 function(server_name) -- default handler (optional)
@@ -86,6 +84,30 @@ return {
                                 },
                             }
                         }
+                    }
+                end,
+                ["basedpyright"] = function()
+                    local lspconfig = require("lspconfig")
+                    lspconfig.basedpyright.setup {
+                        capabilities = capabilities,
+                        settings = {
+                            basedpyright = {
+                                analysis = {
+                                    typeCheckingMode = "standard",
+                                    autoImportCompletions = true,
+                                },
+                            },
+                        },
+                    }
+                end,
+                ["ruff"] = function()
+                    local lspconfig = require("lspconfig")
+                    lspconfig.ruff.setup {
+                        capabilities = capabilities,
+                        on_attach = function(client, _)
+                            -- Disable hover in favor of basedpyright
+                            client.server_capabilities.hoverProvider = false
+                        end,
                     }
                 end,
             }

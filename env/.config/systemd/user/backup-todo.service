@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup TODO.md to Google Drive
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/scripts/backup-todo

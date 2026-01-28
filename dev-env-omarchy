@@ -57,6 +57,7 @@ update_files $DEV_ENV/env/.config/nvim $XDG_CONFIG_HOME/nvim
 update_files $DEV_ENV/env/.config/personal $XDG_CONFIG_HOME/personal
 update_files $DEV_ENV/env/.config/io.datasette.llm/ $XDG_CONFIG_HOME/io.datasette.llm
 update_files $DEV_ENV/env/.config/repomix/ $XDG_CONFIG_HOME/repomix
+update_files $DEV_ENV/env/.config/ghostty/ $XDG_CONFIG_HOME/ghostty
 update_files $DEV_ENV/env/.local $HOME/.local/
 rm $HOME/.local/scripts/dev-env # this is not to be confused with dev-env-omarchy
 
@@ -117,3 +118,7 @@ copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
 
 #mouseless
 copy $DEV_ENV/mouseless/config.yaml $HOME/.mouseless/configs/config.yaml
+
+#systemd
+copy $DEV_ENV/env/.config/systemd/user/backup-todo.timer $HOME/.config/systemd/user/backup-todo.timer
+copy $DEV_ENV/env/.config/systemd/user/backup-todo.service $HOME/.config/systemd/user/backup-todo.service

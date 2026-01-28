@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+# Backup TODO.md to Google Drive with versioning
+# Requires: rclone configured with a remote named "gdrive"
+#
+# Setup:
+#   1. Install rclone
+#   2. Configure: rclone config
+#      - Choose "n" for new remote
+#      - Name it "gdrive"
+#      - Choose "Google Drive" as storage type
+#      - Follow OAuth flow
+#   3. Add to crontab: crontab -e
+#      0 * * * * $HOME/.local/scripts/backup-todo
+#
+# Configuration
+TODO_FILE="$HOME/repos/personal/TODO.md"
+REMOTE_NAME="gdrive"
+REMOTE_PATH="Backups/todo"
+RETENTION_DAYS=7
+LOG_FILE="$HOME/.local/share/backup-todo.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+# Check if TODO.md exists
+if [ ! -f "$TODO_FILE" ]; then
+    log "ERROR: $TODO_FILE not found"
+    exit 1
+fi
+
+# Check if rclone is installed
+if ! command -v rclone &> /dev/null; then
+    log "ERROR: rclone is not installed"
+    exit 1
+fi
+
+# Check if remote is configured
+if ! rclone listremotes | grep -q "^${REMOTE_NAME}:$"; then
+    log "ERROR: rclone remote '$REMOTE_NAME' not configured"
+    exit 1
+fi
+
+# Create timestamped filename
+TIMESTAMP=$(date '+%Y-%m-%d_%H-%M')
+BACKUP_NAME="TODO_${TIMESTAMP}.md"
+
+# Upload to Google Drive
+log "Starting backup: $BACKUP_NAME"
+if rclone copyto "$TODO_FILE" "${REMOTE_NAME}:${REMOTE_PATH}/${BACKUP_NAME}"; then
+    log "SUCCESS: Uploaded $BACKUP_NAME"
+else
+    log "ERROR: Failed to upload $BACKUP_NAME"
+    exit 1
+fi
+
+# Clean up old backups (older than retention period)
+log "Cleaning up backups older than $RETENTION_DAYS days"
+if rclone delete "${REMOTE_NAME}:${REMOTE_PATH}" --min-age "${RETENTION_DAYS}d"; then
+    log "SUCCESS: Cleanup complete"
+else
+    log "WARNING: Cleanup failed, but backup was successful"
+fi
+
+log "Backup complete"

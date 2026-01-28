@@ -1,0 +1,9 @@
+[Unit]
+Description=Hourly backup of TODO.md to Google Drive
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
