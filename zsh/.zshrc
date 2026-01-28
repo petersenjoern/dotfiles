@@ -99,6 +99,9 @@ zstyle ':completion:*:*:docker-*:*' option-stacking yes
 bindkey "^[[1;5C" forward-word   # Ctrl + Right Arrow
 bindkey "^[[1;5D" backward-word  # Ctrl + Left Arrow
 
+# Disable terminal flow control (Ctrl+S/Ctrl+Q) to allow Ctrl+S for saving in Neovim
+stty -ixon
+
 
 # histfile
 HISTFILE=~/.zsh_history

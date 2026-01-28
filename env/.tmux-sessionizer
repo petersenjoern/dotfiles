@@ -5,17 +5,48 @@ if [[ "$(pwd)" == $HOME/repos ]]; then
     return
 fi
 
-if ! tmux has-session -t scratch-pad 2>/dev/null; then
-    tmux new-window -dn scratch-pad
+window_exists() {
+    tmux list-windows -F '#W' 2>/dev/null | grep -q "^$1$"
+}
+
+# 1. nvim window - rename the first window (created by tmux new-session)
+if ! window_exists "nvim"; then
+    tmux rename-window -t 1 nvim
+    tmux send-keys -t nvim "nvim ." C-m
 fi
 
-CHEATSHEET_FILE="$DEV_ENV/cheatsheet.md"
-if ! tmux has-session -t cheatsheet 2>/dev/null; then
+# 2. scratchpad window (3 panes: 2 stacked left, 1 large right)
+if ! window_exists "scratchpad"; then
+    tmux new-window -dn scratchpad
+    tmux split-window -t scratchpad -h
+    tmux split-window -t scratchpad.1 -v
+fi
+
+# 3. claude window (4 equal panes, 2x2 grid)
+if ! window_exists "claude"; then
+    tmux new-window -dn claude
+    tmux split-window -t claude -h
+    tmux split-window -t claude.1 -v
+    tmux split-window -t claude.2 -v
+    tmux select-layout -t claude tiled
+fi
+
+# 4. todo window
+if ! window_exists "todo"; then
+    tmux new-window -dn todo
+    tmux send-keys -t todo "nvim ~/repos/personal/TODO.md" C-m
+fi
+
+# 5. services window (3 panes: be, fe, docker)
+if ! window_exists "services"; then
+    tmux new-window -dn services
+    tmux split-window -t services -h
+    tmux split-window -t services.1 -v
+fi
+
+# 6. cheatsheet window
+if ! window_exists "cheatsheet"; then
     tmux new-window -dn cheatsheet
-    tmux send-keys -t cheatsheet "nvim \"$CHEATSHEET_FILE\"" C-m
-else
-    tmux send-keys -t cheatsheet "nvim \"$CHEATSHEET_FILE\"" C-m
+    tmux send-keys -t cheatsheet "nvim ~/repos/personal/dotfiles/cheatsheet.md" C-m
 fi
 
-vim .
-clear
