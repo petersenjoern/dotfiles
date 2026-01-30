@@ -82,6 +82,7 @@ sup = submodule update
 most-recent-tag = "describe --tags --abbrev=0"
 branch-name = "!git rev-parse --abbrev-ref HEAD"
 rebase-master = !CURRENT=$(git branch-name) && git cop master && git co $CURRENT && git rebase master
+rebase-main = !CURRENT=$(git branch-name) && git cop main && git co $CURRENT && git rebase main
 fco = "!git checkout $(git branch --sort='-committerdate:iso8601' | fzf)"
 whoami = !git config user.name && git config user.email
 l = log --graph --pretty=format:'%C(45)%s%Creset %C(white)%an, %ar%Creset %C(240)%h%Creset'
