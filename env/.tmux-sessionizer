@@ -37,11 +37,12 @@ if ! window_exists "todo"; then
     tmux send-keys -t todo "nvim ~/repos/personal/TODO.md" C-m
 fi
 
-# 5. services window (3 panes: be, fe, docker)
+# 5. services window (4 panes: be, fe, docker, dbeaver)
 if ! window_exists "services"; then
     tmux new-window -dn services
     tmux split-window -t services -h
     tmux split-window -t services.1 -v
+    tmux split-window -t services.2 -v
 fi
 
 # 6. cheatsheet window

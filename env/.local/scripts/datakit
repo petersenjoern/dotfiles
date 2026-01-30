@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# datakit - CLI wrapper for the data pipeline toolkit
+
+exec uv run --project ~/repos/work/amass/data/pipeline ~/repos/work/amass/data/pipeline/src/cli/datakit.py "$@"
