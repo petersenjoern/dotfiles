@@ -34,8 +34,8 @@ vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]])
 -- Copy line to system clipboard | Trigger: SPACE + Y (SHIFT + y)
 vim.keymap.set("n", "<leader>Y", [["+Y]])
 
--- Delete without copying to clipboard (void register) | Trigger: SPACE + d (normal/visual mode)
-vim.keymap.set({ "n", "v" }, "<leader>d", "\"_d")
+-- Delete without copying to clipboard (void register) | Trigger: SPACE + D (normal/visual mode)
+vim.keymap.set({ "n", "v" }, "<leader>D", "\"_d")
 
 -- This is going to get me cancelled
 -- Make Ctrl+C behave like Escape in insert mode | Trigger: CTRL + c (in insert mode)
@@ -100,6 +100,9 @@ vim.keymap.set(
 vim.keymap.set("n", "<leader>ca", function()
     require("cellular-automaton").start_animation("make_it_rain")
 end)
+
+-- Toggle cloak (hide/show secrets in env files) | Trigger: SPACE + c + t
+vim.keymap.set("n", "<leader>ct", "<cmd>CloakToggle<cr>", { desc = "Toggle Cloak" })
 
 -- Source current file (reload configuration) | Trigger: SPACE + SPACE
 vim.keymap.set("n", "<leader><leader>", function()
