@@ -73,5 +73,49 @@ return {
                 on_attach = nil,
             })
         end
-    }
+    },
+
+    {
+        "nvim-treesitter/nvim-treesitter-textobjects",
+        branch = "main",
+        dependencies = { "nvim-treesitter/nvim-treesitter" },
+        config = function()
+            local ts_select = require("nvim-treesitter-textobjects.select")
+            local ts_move = require("nvim-treesitter-textobjects.move")
+
+            -- Selection keymaps (visual and operator-pending modes)
+            local select_maps = {
+                ["af"] = "@function.outer",
+                ["if"] = "@function.inner",
+                ["ac"] = "@class.outer",
+                ["ic"] = "@class.inner",
+                ["aa"] = "@parameter.outer",
+                ["ia"] = "@parameter.inner",
+            }
+
+            for key, query in pairs(select_maps) do
+                vim.keymap.set({ "x", "o" }, key, function()
+                    ts_select.select_textobject(query, "textobjects", { lookahead = true })
+                end, { desc = "Select " .. query })
+            end
+
+            -- Movement keymaps
+            local move_maps = {
+                ["]m"] = { query = "@function.outer", func = ts_move.goto_next_start },
+                ["]c"] = { query = "@class.outer", func = ts_move.goto_next_start },
+                ["]M"] = { query = "@function.outer", func = ts_move.goto_next_end },
+                ["]C"] = { query = "@class.outer", func = ts_move.goto_next_end },
+                ["[m"] = { query = "@function.outer", func = ts_move.goto_previous_start },
+                ["[c"] = { query = "@class.outer", func = ts_move.goto_previous_start },
+                ["[M"] = { query = "@function.outer", func = ts_move.goto_previous_end },
+                ["[C"] = { query = "@class.outer", func = ts_move.goto_previous_end },
+            }
+
+            for key, opts in pairs(move_maps) do
+                vim.keymap.set({ "n", "x", "o" }, key, function()
+                    opts.func(opts.query, "textobjects")
+                end, { desc = "Go to " .. opts.query })
+            end
+        end,
+    },
 }

@@ -145,6 +145,57 @@ C-p and C-pf    - find files
 - <leader>q - to close the quickfix window
 
 
+Debugging in vim:
+  1. Open neovim in your pipeline project directory
+  2. Press <leader>dc to start debugging
+  3. Select a "Pipeline: ..." config from the list
+  4. For configs with args, you'll be prompted to enter the date
+
+  Press <leader> and wait 300ms to see a popup with all your keybindings. I added group labels for your
+  existing mappings:
+  ┌───────────┬───────────────┐
+  │  Prefix   │     Group     │
+  ├───────────┼───────────────┤
+  │ <leader>d │ debug         │
+  ├───────────┼───────────────┤
+  │ <leader>t │ test          │
+  ├───────────┼───────────────┤
+  │ <leader>p │ project/files │
+  ├───────────┼───────────────┤
+  │ <leader>g │ git           │
+  ├───────────┼───────────────┤
+  │ <leader>v │ vim           │
+  ├───────────┼───────────────┤
+  │ <leader>s │ search        │
+  └───────────┴───────────────┘
+  Comment.nvim
+  ┌─────────────┬────────────────────────────────────────────────────────┐
+  │ Keybinding  │                         Action                         │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gcc         │ Toggle line comment                                    │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gbc         │ Toggle block comment                                   │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gc + motion │ Comment with motion (e.g., gc3j comments 3 lines down) │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gb + motion │ Block comment with motion                              │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gcO         │ Add comment line above                                 │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gco         │ Add comment line below                                 │
+  ├─────────────┼────────────────────────────────────────────────────────┤
+  │ gcA         │ Add comment at end of line                             │
+  └─────────────┴────────────────────────────────────────────────────────┘
+  In visual mode, just select and press gc or gb.
+
+  nvim-autopairs
+
+  - Auto-closes (), [], {}, "", ''
+  - Treesitter-aware (won't add pairs inside strings)
+  - Integrates with nvim-cmp: selecting a function adds () automatically
+  - <M-e> (Alt+e) for fast-wrap - wrap existing text with pairs
+
+
 ## Other
 :cq             - exit with error code
 :Ex!            - discard changes
