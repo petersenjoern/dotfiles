@@ -76,12 +76,23 @@
         ]
       },
       {
-        "matcher": "Edit:*.py|Edit:*.ts|Edit:*.tsx",
+        "matcher": "Edit:*.py|Write:*.py|Edit:*.ts|Edit:*.tsx",
         "hooks": [
           {
             "type": "command",
             "command": "make lint || exit 2",
             "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit:*.py|Write:*.py",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pyright --outputjson ${file} 2>/dev/null | head -20"
           }
         ]
       }
