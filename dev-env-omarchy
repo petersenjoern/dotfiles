@@ -68,6 +68,7 @@ copy $DEV_ENV/env/.tmux-sessionizer $HOME/.tmux-sessionizer
 copy $DEV_ENV/zsh/.zshrc $HOME/.zshrc
 copy $DEV_ENV/zsh/.zsh_profile $HOME/.zsh_profile
 copy $DEV_ENV/zsh/.p10k.zsh $HOME/.p10k.zsh
+copy $DEV_ENV/zsh/.inputrc $HOME/.inputrc
 mkdir -p "$HOME/.oh-my-zsh/plugins/correction"
 copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/plugins/correction/correction.zsh
 
@@ -98,7 +99,7 @@ copy $DEV_ENV/tmux/.tmux.conf $HOME/.tmux.conf
 tmux source-file $HOME/.tmux.conf
 
 # claude code
-# copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
+copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
 copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
 mkdir -p $HOME/.claude/hooks
 copy $DEV_ENV/claude/hooks/pre_tool_use.py $HOME/.claude/hooks/

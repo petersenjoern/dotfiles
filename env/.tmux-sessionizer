@@ -22,13 +22,32 @@ if ! window_exists "scratchpad"; then
     tmux split-window -t scratchpad.1 -v
 fi
 
-# 3. claude window (4 equal panes, 2x2 grid)
-if ! window_exists "claude"; then
-    tmux new-window -dn claude
-    tmux split-window -t claude -h
-    tmux split-window -t claude.1 -v
-    tmux split-window -t claude.2 -v
-    tmux select-layout -t claude tiled
+# 3. cc window (4 equal panes, 2x2 grid)
+if ! window_exists "cc"; then
+    tmux new-window -dn cc
+    tmux split-window -t cc -h
+    tmux split-window -t cc.1 -v
+    tmux split-window -t cc.2 -v
+    tmux select-layout -t cc tiled
+fi
+
+# 3b. restore worktree windows from manifest (resurrect support)
+project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+if [[ -n "$project_root" ]] && [[ -f "$project_root/.worktrees/manifest.json" ]]; then
+    while IFS= read -r entry; do
+        wt_window=$(echo "$entry" | jq -r '.window')
+        wt_path=$(echo "$entry" | jq -r '.path')
+        full_path="$project_root/$wt_path"
+        if [[ -d "$full_path" ]] && ! window_exists "$wt_window"; then
+            tmux new-window -dn "$wt_window" -c "$full_path"
+            tmux split-window -t "$wt_window" -h -p 50 -c "$full_path"
+            tmux split-window -t "$wt_window.1" -v -p 50 -c "$full_path"
+            tmux split-window -t "$wt_window.2" -v -p 50 -c "$full_path"
+            tmux send-keys -t "$wt_window.1" 'claude' C-m
+            tmux send-keys -t "$wt_window.2" 'nvim .' C-m
+            tmux select-pane -t "$wt_window.1"
+        fi
+    done < <(jq -c '.worktrees[]' "$project_root/.worktrees/manifest.json" 2>/dev/null)
 fi
 
 # 4. todo window

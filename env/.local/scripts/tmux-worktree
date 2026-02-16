@@ -1,0 +1,518 @@
+#!/usr/bin/env python3
+"""tmux-worktree: manage git worktrees as tmux windows for Claude Code.
+
+Keybindings (configured in .tmux.conf):
+    prefix+T  create a new worktree window
+    prefix+t  show overview of all worktree windows
+    prefix+X  remove a worktree window
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+# ── Shell helpers ──────────────────────────────────────────────────────────────
+
+
+def run(cmd: str, cwd: str | None = None, check: bool = True) -> str:
+    """Run a shell command and return stripped stdout."""
+    r = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd)
+    if check and r.returncode != 0:
+        return ""
+    return r.stdout.strip()
+
+
+def tmux(cmd: str) -> str:
+    return run(f"tmux {cmd}")
+
+
+def git(cmd: str, cwd: str | None = None) -> str:
+    return run(f"git {cmd}", cwd=cwd)
+
+
+# ── Project helpers ────────────────────────────────────────────────────────────
+
+
+def get_project_root() -> Path:
+    """Resolve the main git repo root, even if we're inside a worktree."""
+    pane_path = tmux("display-message -p '#{pane_current_path}'")
+    toplevel = git("rev-parse --show-toplevel", cwd=pane_path)
+    if not toplevel:
+        sys.exit("Error: not inside a git repository")
+
+    toplevel = Path(toplevel)
+
+    # If .git is a file (not dir), we're inside a worktree — follow to main repo
+    git_path = toplevel / ".git"
+    if git_path.is_file():
+        gitdir = git_path.read_text().removeprefix("gitdir: ").strip()
+        gitdir = (toplevel / gitdir).resolve()
+        main_git = gitdir.parent.parent
+        main_toplevel = git("rev-parse --show-toplevel", cwd=str(main_git.parent))
+        if main_toplevel:
+            toplevel = Path(main_toplevel)
+
+    return toplevel
+
+
+def ensure_worktrees_dir(project_root: Path) -> Path:
+    """Create .worktrees/ dir and add it to .git/info/exclude."""
+    wt_dir = project_root / ".worktrees"
+    wt_dir.mkdir(exist_ok=True)
+
+    exclude_file = project_root / ".git" / "info" / "exclude"
+    if exclude_file.is_file():
+        content = exclude_file.read_text()
+        if ".worktrees/" not in content:
+            with exclude_file.open("a") as f:
+                f.write(".worktrees/\n")
+
+    return wt_dir
+
+
+# ── Manifest ───────────────────────────────────────────────────────────────────
+
+
+def manifest_path(project_root: Path) -> Path:
+    return project_root / ".worktrees" / "manifest.json"
+
+
+def manifest_read(project_root: Path) -> list[dict]:
+    path = manifest_path(project_root)
+    if not path.is_file():
+        return []
+    return json.loads(path.read_text()).get("worktrees", [])
+
+
+def manifest_write(project_root: Path, entries: list[dict]) -> None:
+    path = manifest_path(project_root)
+    path.parent.mkdir(exist_ok=True)
+    path.write_text(json.dumps({"worktrees": entries}, indent=2) + "\n")
+
+
+def manifest_add(project_root: Path, window: str, branch: str, rel_path: str) -> None:
+    entries = manifest_read(project_root)
+    entries.append({"window": window, "branch": branch, "path": rel_path})
+    manifest_write(project_root, entries)
+
+
+def manifest_remove(project_root: Path, window: str) -> None:
+    entries = [e for e in manifest_read(project_root) if e["window"] != window]
+    manifest_write(project_root, entries)
+
+
+# ── Window helpers ─────────────────────────────────────────────────────────────
+
+
+def list_wt_windows() -> list[str]:
+    """Return sorted list of cc-wt-* window names."""
+    all_windows = tmux("list-windows -F '#W'").splitlines()
+    return sorted(w for w in all_windows if w.startswith("cc-wt-"))
+
+
+def next_wt_number() -> int:
+    """Find the next available cc-wt-N number."""
+    nums = []
+    for w in list_wt_windows():
+        try:
+            nums.append(int(w.removeprefix("cc-wt-")))
+        except ValueError:
+            continue
+    return max(nums, default=0) + 1
+
+
+# ── Worktree status ───────────────────────────────────────────────────────────
+
+
+def worktree_status(wt_path: str) -> tuple[str, str]:
+    """Return (icon, description) for a worktree's git status."""
+    dirty = git("status --porcelain", cwd=wt_path)
+    unpushed = git("log --oneline @{upstream}..HEAD", cwd=wt_path)
+
+    dirty_count = len(dirty.splitlines()) if dirty else 0
+    unpushed_count = len(unpushed.splitlines()) if unpushed else 0
+
+    parts = []
+    icon = "✓"
+
+    if dirty_count:
+        icon = "✗"
+        parts.append(f"{dirty_count} uncommitted")
+    else:
+        parts.append("clean")
+
+    if unpushed_count:
+        parts.append(f"{unpushed_count} unpushed")
+    elif not dirty_count:
+        parts.append("pushed")
+
+    return icon, ", ".join(parts)
+
+
+# ── Env file symlinking ───────────────────────────────────────────────────────
+
+
+def sync_env_files(project_root: Path, wt_path: Path) -> None:
+    """Symlink .env* files from main worktree into the new worktree."""
+    # Get list of tracked files to skip (they're already in the worktree)
+    tracked = set(
+        git("ls-files --full-name", cwd=str(project_root)).splitlines()
+    )
+
+    # Find all .env* files in the main worktree
+    env_files: list[Path] = []
+    skip_dirs = {".worktrees", ".git", "node_modules", ".venv", "__pycache__"}
+    for p in project_root.rglob(".env*"):
+        # Skip anything inside .worktrees/, .git/, node_modules/, .venv/
+        rel_parts = p.relative_to(project_root).parts
+        if any(part in skip_dirs for part in rel_parts):
+            continue
+        if not p.is_file():
+            continue
+        env_files.append(p)
+
+    linked = 0
+    for env_file in env_files:
+        rel = env_file.relative_to(project_root)
+
+        # Skip tracked files (already present in worktree via git)
+        if str(rel) in tracked:
+            continue
+
+        target = wt_path / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        if target.exists() or target.is_symlink():
+            continue
+
+        # Create relative symlink
+        link_target = os.path.relpath(env_file, target.parent)
+        target.symlink_to(link_target)
+        linked += 1
+        print(f"  Linked {rel}")
+
+    if linked:
+        print(f"  ({linked} env file{'s' if linked > 1 else ''} symlinked)")
+
+
+# ── Auto env setup ─────────────────────────────────────────────────────────────
+
+
+def auto_env_setup_commands(project_root: Path, wt_path: Path) -> list[str]:
+    """Detect project type and return setup commands for the worktree."""
+    hook = project_root / ".worktree-setup"
+    if hook.is_file():
+        return [f"source '{hook}'"]
+
+    cmds = []
+
+    if (wt_path / "mise.toml").exists() or (wt_path / ".mise.toml").exists():
+        cmds.append("mise install")
+
+    if (wt_path / "package.json").exists():
+        if (wt_path / "pnpm-lock.yaml").exists():
+            cmds.append("pnpm install")
+        elif (wt_path / "yarn.lock").exists():
+            cmds.append("yarn install")
+        else:
+            cmds.append("npm install")
+    elif (wt_path / "pyproject.toml").exists():
+        cmds.append("uv sync" if run("which uv", check=False) else "pip install -e .")
+    elif (wt_path / "requirements.txt").exists():
+        cmds.append("uv pip install -r requirements.txt" if run("which uv", check=False) else "pip install -r requirements.txt")
+
+    return cmds
+
+
+# ── Branch selection ──────────────────────────────────────────────────────────
+
+
+def get_available_branches(project_root: Path) -> list[str]:
+    """Return local branches not already checked out by a worktree."""
+    all_branches = git("branch --sort=-committerdate --format='%(refname:short)'", cwd=str(project_root))
+    if not all_branches:
+        return []
+    branches = [b.strip() for b in all_branches.splitlines() if b.strip()]
+
+    # Get branches in use by worktrees
+    wt_output = git("worktree list --porcelain", cwd=str(project_root))
+    in_use: set[str] = set()
+    for line in wt_output.splitlines():
+        if line.startswith("branch refs/heads/"):
+            in_use.add(line.removeprefix("branch refs/heads/"))
+
+    return [b for b in branches if b not in in_use]
+
+
+def select_branch(project_root: Path, branches: list[str]) -> tuple[str, str]:
+    """Show fzf branch selector. Returns (action, branch).
+
+    action is 'select', 'new', or 'cancel'.
+    """
+    preview_cmd = f"git -C '{project_root}' log --oneline -10 {{}}"
+
+    try:
+        result = subprocess.run(
+            ["fzf",
+             "--header=ctrl-n: create new branch",
+             "--reverse",
+             f"--preview={preview_cmd}",
+             "--preview-window=right:50%",
+             "--expect=ctrl-n"],
+            input="\n".join(branches),
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        sys.exit("Error: fzf not found")
+
+    if result.returncode != 0 and not result.stdout.strip():
+        return ("cancel", "")
+
+    lines = result.stdout.splitlines()
+    key = lines[0] if lines else ""
+    selected = lines[1].strip() if len(lines) > 1 else ""
+
+    if key == "ctrl-n":
+        return ("new", "")
+    elif selected:
+        return ("select", selected)
+    else:
+        return ("cancel", "")
+
+
+# ── Subcommands ────────────────────────────────────────────────────────────────
+
+
+def cmd_create(args: argparse.Namespace) -> None:
+    project_root = get_project_root()
+
+    if args.branch:
+        branch = args.branch
+    else:
+        branches = get_available_branches(project_root)
+        if branches:
+            action, selected = select_branch(project_root, branches)
+            if action == "cancel":
+                return
+            elif action == "select":
+                branch = selected
+            else:  # "new"
+                branch_input = input("Enter branch name (leave empty for auto-generated wt/N): ").strip()
+                branch = branch_input or None
+        else:
+            branch_input = input("Enter branch name (leave empty for auto-generated wt/N): ").strip()
+            branch = branch_input or None
+
+    num = next_wt_number()
+    wt_name = f"wt-{num}"
+    window_name = f"cc-wt-{num}"
+    if branch is None:
+        branch = f"wt/{num}"
+
+    wt_dir = ensure_worktrees_dir(project_root)
+    wt_path = wt_dir / wt_name
+
+    # Create worktree (existing branch or new)
+    branch_exists = bool(git(f"show-ref --verify refs/heads/{branch}", cwd=str(project_root)))
+    if branch_exists:
+        git(f"worktree add '{wt_path}' '{branch}'", cwd=str(project_root))
+    else:
+        git(f"worktree add '{wt_path}' -b '{branch}'", cwd=str(project_root))
+
+    print(f"Created worktree: {wt_path} (branch: {branch})")
+
+    # Symlink .env files from main worktree
+    sync_env_files(project_root, wt_path)
+
+    # Create tmux window with 2x2 grid layout
+    # Pane 1: top-left (claude), Pane 2: top-right (nvim)
+    # Pane 3: bottom-left (shell), Pane 4: bottom-right (shell)
+    tmux(f"new-window -n '{window_name}' -c '{wt_path}'")
+    tmux(f"split-window -t '{window_name}' -h -p 50 -c '{wt_path}'")
+    tmux(f"split-window -t '{window_name}.1' -v -p 50 -c '{wt_path}'")
+    tmux(f"split-window -t '{window_name}.2' -v -p 50 -c '{wt_path}'")
+
+    # Run env setup in bottom-left pane
+    if not args.no_setup:
+        for cmd in auto_env_setup_commands(project_root, wt_path):
+            tmux(f"send-keys -t '{window_name}.3' '{cmd}' C-m")
+
+    # Start claude in top-left, nvim in top-right
+    tmux(f"send-keys -t '{window_name}.1' 'claude' C-m")
+    tmux(f"send-keys -t '{window_name}.2' 'nvim .' C-m")
+    tmux(f"select-pane -t '{window_name}.1'")
+
+    manifest_add(project_root, window_name, branch, f".worktrees/{wt_name}")
+    print(f"Window {window_name} ready.")
+
+
+def cmd_remove(args: argparse.Namespace) -> None:
+    project_root = get_project_root()
+
+    windows = list_wt_windows()
+    if not windows:
+        print("No worktree windows found.")
+        input("Press Enter to close...")
+        return
+
+    # fzf selection with preview
+    preview_script = (
+        f"wt_num=$(echo {{}} | sed 's/cc-wt-//'); "
+        f"wt_path='{project_root}/.worktrees/wt-'$wt_num; "
+        f"if [ -d \"$wt_path\" ]; then "
+        f"  branch=$(git -C \"$wt_path\" branch --show-current 2>/dev/null || echo unknown); "
+        f"  echo \"Branch: $branch\"; echo ''; "
+        f"  echo '--- Status ---'; git -C \"$wt_path\" status --short 2>/dev/null; "
+        f"  echo ''; echo '--- Unpushed ---'; "
+        f"  git -C \"$wt_path\" log --oneline @{{upstream}}..HEAD 2>/dev/null || echo '(no upstream)'; "
+        f"else echo 'Directory not found'; fi"
+    )
+
+    try:
+        result = subprocess.run(
+            ["fzf", "--header=Select worktree to remove",
+             f"--preview={preview_script}", "--preview-window=right:50%"],
+            input="\n".join(windows), capture_output=True, text=True,
+        )
+        selected = result.stdout.strip()
+    except FileNotFoundError:
+        sys.exit("Error: fzf not found")
+
+    if not selected:
+        return
+
+    wt_num = selected.removeprefix("cc-wt-")
+    wt_path = project_root / ".worktrees" / f"wt-{wt_num}"
+
+    # Handle orphaned window (directory missing)
+    if not wt_path.is_dir():
+        print(f"Worktree directory not found: {wt_path}")
+        print("Removing orphaned window...")
+        tmux(f"kill-window -t '{selected}'")
+        manifest_remove(project_root, selected)
+        input("Press Enter to close...")
+        return
+
+    branch = git("branch --show-current", cwd=str(wt_path)) or "unknown"
+
+    # Safety checks
+    has_uncommitted = bool(git("status --porcelain", cwd=str(wt_path)))
+    unpushed = git("log --oneline @{upstream}..HEAD", cwd=str(wt_path))
+    has_unpushed = bool(unpushed)
+
+    main_branch = git("symbolic-ref refs/remotes/origin/HEAD", cwd=str(project_root))
+    main_branch = main_branch.removeprefix("refs/remotes/origin/") if main_branch else ""
+    is_unmerged = False
+    if main_branch and branch != main_branch:
+        git("fetch origin", cwd=str(project_root))
+        r = subprocess.run(
+            f"git diff 'origin/{main_branch}...{branch}' --quiet",
+            shell=True, capture_output=True, text=True, cwd=str(project_root),
+        )
+        is_unmerged = r.returncode != 0
+
+    # Display summary
+    print(f"\n  {selected} (branch: {branch})\n")
+
+    if has_uncommitted:
+        print("  ✗ Uncommitted changes detected")
+        if not args.force:
+            print("\n  Cannot remove: commit or stash changes first.")
+            print("  Use --force to override.")
+            input("  Press Enter to close...")
+            return
+    else:
+        print("  ✓ Clean working tree")
+
+    if has_unpushed:
+        print("  ✗ Unpushed commits:")
+        for line in unpushed.splitlines():
+            print(f"      {line}")
+
+    if is_unmerged:
+        print(f"  ✗ Branch not merged into {main_branch}")
+
+    print()
+    confirm = input("  Remove? [y/N] ").strip().lower()
+    if confirm != "y":
+        print("  Cancelled.")
+        return
+
+    # Remove window and worktree
+    tmux(f"kill-window -t '{selected}'")
+    force_flag = "--force" if args.force else ""
+    if not git(f"worktree remove '{wt_path}' {force_flag}", cwd=str(project_root)):
+        git(f"worktree remove --force '{wt_path}'", cwd=str(project_root))
+
+    # Clean up auto-generated branches that are fully merged
+    if branch.startswith("wt/") and not is_unmerged:
+        git(f"branch -d '{branch}'", cwd=str(project_root))
+
+    manifest_remove(project_root, selected)
+    print(f"  Removed {selected}.")
+
+
+def cmd_overview(args: argparse.Namespace) -> None:
+    project_root = get_project_root()
+    wt_dir = project_root / ".worktrees"
+
+    print(f"\n  Worktrees for {project_root.name}")
+    print(f"  {'─' * 55}\n")
+
+    windows = list_wt_windows()
+    if not windows:
+        print("  No worktree windows active.\n")
+        print("  Press prefix+T to create one.")
+        input("\n  Press Enter to close...")
+        return
+
+    for window in windows:
+        num = window.removeprefix("cc-wt-")
+        wt_path = wt_dir / f"wt-{num}"
+
+        if wt_path.is_dir():
+            branch = git("branch --show-current", cwd=str(wt_path)) or "?"
+            icon, status_msg = worktree_status(str(wt_path))
+            print(f"  {window:<12} {branch:<25} {icon} {status_msg}")
+        else:
+            print(f"  {window:<12} {'(missing)':<25} ⚠ directory not found")
+
+    input("\n  Press Enter to close...")
+
+
+# ── CLI ────────────────────────────────────────────────────────────────────────
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="tmux-worktree",
+        description="Manage git worktrees as tmux windows for Claude Code.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    # create
+    p_create = sub.add_parser("create", help="Create a new worktree and tmux window")
+    p_create.add_argument("-b", "--branch", help="Branch name (default: auto-generated wt/N)")
+    p_create.add_argument("--no-setup", action="store_true", help="Skip auto env setup")
+    p_create.set_defaults(func=cmd_create)
+
+    # remove
+    p_remove = sub.add_parser("remove", help="Remove a worktree and its tmux window")
+    p_remove.add_argument("--force", action="store_true", help="Force removal even with uncommitted changes")
+    p_remove.set_defaults(func=cmd_remove)
+
+    # overview
+    p_overview = sub.add_parser("overview", help="Show status of all active worktrees")
+    p_overview.set_defaults(func=cmd_overview)
+
+    return parser
+
+
+if __name__ == "__main__":
+    args = build_parser().parse_args()
+    args.func(args)

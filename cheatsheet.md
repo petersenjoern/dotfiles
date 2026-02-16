@@ -258,16 +258,6 @@ c - Switch to stage view
 rg "hello" --type py
 rg -l "hello" --type py | ffm
 
-
-# Repomix
-## Often used
-repomix --include "**/*.py" --ignore "**/*.log,tmp/" --style xml --no-file-summary --remove-empty-lines --stdout
-
-# OBS: piping into repomix --stdin is causing formatting issues in my tmux session.
-# instead of -stdin, find the files with the rg expression, and then write a new repomix --include expression
-rg --files-with-matches "hello" | repomix --stdin
-rg -l "hello" --type py | ffm | repomix --stdin
-
 # Symbex
 ## Often used
 symbex -x ./.venv -d . -s --docs --typed
