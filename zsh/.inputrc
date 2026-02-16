@@ -1,0 +1,2 @@
+"\C-?": backward-delete-char
+"\e[3~": delete-char

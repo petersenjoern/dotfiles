@@ -100,7 +100,11 @@ bindkey "^[[1;5C" forward-word   # Ctrl + Right Arrow
 bindkey "^[[1;5D" backward-word  # Ctrl + Left Arrow
 
 # Disable terminal flow control (Ctrl+S/Ctrl+Q) to allow Ctrl+S for saving in Neovim
-stty -ixon
+# Ensure backspace (^?) is recognized as erase by child processes
+if [[ -t 0 ]]; then
+  stty -ixon
+  stty erase '^?'
+fi
 
 
 # histfile
