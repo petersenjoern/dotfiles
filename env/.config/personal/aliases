@@ -37,4 +37,4 @@ alias llmcmd="llm cmd"
 
 
 # Scripts execution
-alias cedit="claude --permission-mode acceptEdits --disallowedTools Bash"
+alias ctypecheck="claude -p 'Run pyright on the entire project. List all errors grouped by file. For each error, suggest a fix but do not edit files.' --allowedTools 'Read,Bash,Grep,Glob'"

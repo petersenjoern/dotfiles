@@ -7,9 +7,10 @@ font-style = Regular
 font-size = 9
 
 # Window
+window-padding-balance = true
 window-theme = ghostty
-window-padding-x = 14
-window-padding-y = 14
+window-padding-x = 40,40
+window-padding-y = 40,100
 confirm-close-surface=false
 resize-overlay = never
 gtk-toolbar-style = flat
