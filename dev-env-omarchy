@@ -2,7 +2,7 @@
 dry_run="0"
 
 if [ -z "$XDG_CONFIG_HOME" ]; then
-    echo "no xdg config hom"
+    echo "no xdg config home"
     echo "using ~/.config"
     XDG_CONFIG_HOME=$HOME/.config
 fi
@@ -28,7 +28,7 @@ log "env: $DEV_ENV"
 
 update_files() {
     log "copying over files from: $1"
-    pushd $1 &> /dev/null
+    pushd "$1" &> /dev/null
     (
         configs=`find . -mindepth 0 -maxdepth 1 -type d`
         for c in $configs; do
@@ -36,7 +36,7 @@ update_files() {
 
             log "    copying env: cp $c $2"
             if [[ $dry_run == "0" ]]; then
-                cp -r ./$c $2
+                cp -r "./$c" "$2"
             fi
         done
 
@@ -47,19 +47,27 @@ update_files() {
 copy() {
     log "copying: $1 to $2"
     if [[ $dry_run == "0" ]]; then
-        cp $1 $2
+        cp "$1" "$2"
     fi
 }
 
 # local configs
-rm -rf $XDG_CONFIG_HOME/nvim
+if [[ $dry_run == "0" ]]; then
+    rm -rf $XDG_CONFIG_HOME/nvim
+else
+    log "rm -rf $XDG_CONFIG_HOME/nvim"
+fi
 update_files $DEV_ENV/env/.config/nvim $XDG_CONFIG_HOME/nvim
 update_files $DEV_ENV/env/.config/personal $XDG_CONFIG_HOME/personal
 update_files $DEV_ENV/env/.config/io.datasette.llm/ $XDG_CONFIG_HOME/io.datasette.llm
 update_files $DEV_ENV/env/.config/repomix/ $XDG_CONFIG_HOME/repomix
 update_files $DEV_ENV/env/.config/ghostty/ $XDG_CONFIG_HOME/ghostty
 update_files $DEV_ENV/env/.local $HOME/.local/
-rm $HOME/.local/scripts/dev-env # this is not to be confused with dev-env-omarchy
+if [[ $dry_run == "0" ]]; then
+    rm $HOME/.local/scripts/dev-env # this is not to be confused with dev-env-omarchy
+else
+    log "rm $HOME/.local/scripts/dev-env"
+fi
 
 copy $DEV_ENV/env/.xprofile $HOME/.xprofile
 copy $DEV_ENV/env/.tmux-sessionizer $HOME/.tmux-sessionizer
@@ -79,12 +87,6 @@ copy $DEV_ENV/vscode/keybindings.json $HOME/.config/Code/User/keybindings.json
 # alacritty
 copy $DEV_ENV/alacritty/alacritty-omarchy.toml $HOME/.config/alacritty/alacritty.toml
 
-# bat
-# copy /usr/bin/bat $HOME/.local/bin/bat
-
-# fd
-# copy "$(which fdfind)" $HOME/.local/bin/fd
-
 # fzf
 mkdir -p $HOME/.local/share/fzf
 copy $DEV_ENV/fzf/key-bindings.zsh $HOME/.local/share/fzf/key-bindings.zsh
@@ -96,14 +98,17 @@ copy $DEV_ENV/git/.gitignore $HOME/.gitignore
 
 # tmux
 copy $DEV_ENV/tmux/.tmux.conf $HOME/.tmux.conf
-tmux source-file $HOME/.tmux.conf
+if [[ $dry_run == "0" ]]; then
+    tmux source-file $HOME/.tmux.conf
+else
+    log "tmux source-file $HOME/.tmux.conf"
+fi
 
 # claude code
 copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
 copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
-mkdir -p $HOME/.claude/hooks
-copy $DEV_ENV/claude/hooks/pre_tool_use.py $HOME/.claude/hooks/
-#update_files $DEV_ENV/claude $HOME/.claude/
+update_files $DEV_ENV/claude/hooks $HOME/.claude/hooks
+update_files $DEV_ENV/claude/commands $HOME/.claude/commands
 
 # keybindings
 copy $DEV_ENV/key-mapping/input.conf $HOME/.config/hypr/

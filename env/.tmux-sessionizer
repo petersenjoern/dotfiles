@@ -32,22 +32,8 @@ if ! window_exists "cc"; then
 fi
 
 # 3b. restore worktree windows from manifest (resurrect support)
-project_root=$(git rev-parse --show-toplevel 2>/dev/null)
-if [[ -n "$project_root" ]] && [[ -f "$project_root/.worktrees/manifest.json" ]]; then
-    while IFS= read -r entry; do
-        wt_window=$(echo "$entry" | jq -r '.window')
-        wt_path=$(echo "$entry" | jq -r '.path')
-        full_path="$project_root/$wt_path"
-        if [[ -d "$full_path" ]] && ! window_exists "$wt_window"; then
-            tmux new-window -dn "$wt_window" -c "$full_path"
-            tmux split-window -t "$wt_window" -h -p 50 -c "$full_path"
-            tmux split-window -t "$wt_window.1" -v -p 50 -c "$full_path"
-            tmux split-window -t "$wt_window.2" -v -p 50 -c "$full_path"
-            tmux send-keys -t "$wt_window.1" 'claude' C-m
-            tmux send-keys -t "$wt_window.2" 'nvim .' C-m
-            tmux select-pane -t "$wt_window.1"
-        fi
-    done < <(jq -c '.worktrees[]' "$project_root/.worktrees/manifest.json" 2>/dev/null)
+if [[ -n "$(git rev-parse --show-toplevel 2>/dev/null)" ]]; then
+    "$HOME/.local/scripts/tmux-worktree" restore --all 2>/dev/null
 fi
 
 # 4. todo window
