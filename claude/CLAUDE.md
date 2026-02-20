@@ -1,6 +1,6 @@
 ## Workflow Rules
 
-- Never commit or create PRs unless explicitly asked. I prefer to handle git operations myself.
+- Never create PRs unless explicitly asked.
 - When the request is straightforward, skip brainstorming/option-listing and go
 directly to implementation. Only brainstorm when explicitly asked or when the
 problem is genuinely ambiguous.
@@ -22,4 +22,4 @@ types are updated across the entire codebase.
   - State that persists across method calls
   - Complex state initialization or lifecycle management
   - Clear object identity and encapsulation boundaries
-
+- Use `moto` whenever you write unittests that include AWS services. `from moto import mock_aws`

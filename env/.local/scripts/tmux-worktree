@@ -232,12 +232,10 @@ def auto_env_setup_commands(project_root: Path, wt_path: Path) -> list[str]:
 
 
 def get_available_branches(project_root: Path) -> list[str]:
-    """Return local branches not already checked out by a worktree."""
-    all_branches = git("branch --sort=-committerdate --format='%(refname:short)'", cwd=str(project_root))
-    if not all_branches:
-        return []
-    branches = [b.strip() for b in all_branches.splitlines() if b.strip()]
+    """Return local and remote branches not already checked out by a worktree.
 
+    Remote branches appear as 'origin/branch-name' after local branches.
+    """
     # Get branches in use by worktrees
     wt_output = git("worktree list --porcelain", cwd=str(project_root))
     in_use: set[str] = set()
@@ -245,7 +243,26 @@ def get_available_branches(project_root: Path) -> list[str]:
         if line.startswith("branch refs/heads/"):
             in_use.add(line.removeprefix("branch refs/heads/"))
 
-    return [b for b in branches if b not in in_use]
+    # Local branches
+    local_out = git("branch --sort=-committerdate --format='%(refname:short)'", cwd=str(project_root))
+    local_branches = [b.strip() for b in local_out.splitlines() if b.strip()] if local_out else []
+    local_set = set(local_branches)
+    available_local = [b for b in local_branches if b not in in_use]
+
+    # Remote branches (exclude HEAD pointer and branches that have a local counterpart)
+    remote_out = git("branch -r --sort=-committerdate --format='%(refname:short)'", cwd=str(project_root))
+    available_remote: list[str] = []
+    if remote_out:
+        for rb in remote_out.splitlines():
+            rb = rb.strip()
+            if not rb or "/HEAD" in rb:
+                continue
+            # e.g. "origin/feature" -> local name "feature"
+            local_name = rb.split("/", 1)[1] if "/" in rb else rb
+            if local_name not in local_set and local_name not in in_use:
+                available_remote.append(rb)
+
+    return available_local + available_remote
 
 
 def select_branch(project_root: Path, branches: list[str]) -> tuple[str, str]:
@@ -317,10 +334,18 @@ def cmd_create(args: argparse.Namespace) -> None:
     wt_dir = ensure_worktrees_dir(project_root)
     wt_path = wt_dir / wt_name
 
-    # Create worktree (existing branch or new)
+    # Create worktree (existing local, remote tracking, or new branch)
+    remote_ref = None
+    if "/" in branch and git(f"show-ref --verify refs/remotes/{branch}", cwd=str(project_root)):
+        # Remote branch selected — create local tracking branch
+        remote_ref = branch
+        branch = branch.split("/", 1)[1]
+
     branch_exists = bool(git(f"show-ref --verify refs/heads/{branch}", cwd=str(project_root)))
     if branch_exists:
         git(f"worktree add '{wt_path}' '{branch}'", cwd=str(project_root))
+    elif remote_ref:
+        git(f"worktree add '{wt_path}' -b '{branch}' '{remote_ref}'", cwd=str(project_root))
     else:
         git(f"worktree add '{wt_path}' -b '{branch}'", cwd=str(project_root))
 
@@ -457,6 +482,71 @@ def cmd_remove(args: argparse.Namespace) -> None:
     print(f"  Removed {selected}.")
 
 
+def cmd_restore(args: argparse.Namespace) -> None:
+    """Restore tmux windows for worktrees that exist on disk but lost their window."""
+    project_root = get_project_root()
+    entries = manifest_read(project_root)
+
+    # Find restorable entries: directory exists, window does not
+    existing_windows = set(list_wt_windows())
+    restorable = [
+        e for e in entries
+        if (project_root / e["path"]).is_dir() and e["window"] not in existing_windows
+    ]
+
+    if not restorable:
+        if not args.all:
+            print("No worktrees to restore — all manifest windows are active.")
+            input("Press Enter to close...")
+        return
+
+    if args.all:
+        selected = restorable
+    elif len(restorable) == 1:
+        selected = [restorable[0]]
+    else:
+        # Let user pick via fzf
+        labels = [f"{e['window']}  ({e['branch']})" for e in restorable]
+        try:
+            result = subprocess.run(
+                ["fzf", "--header=Select worktree(s) to restore (TAB to multi-select)",
+                 "--multi", "--reverse"],
+                input="\n".join(labels), capture_output=True, text=True,
+            )
+        except FileNotFoundError:
+            sys.exit("Error: fzf not found")
+
+        if result.returncode != 0 or not result.stdout.strip():
+            return
+
+        chosen = set(result.stdout.strip().splitlines())
+        selected = [e for e, lbl in zip(restorable, labels) if lbl in chosen]
+
+    for entry in selected:
+        wt_window = entry["window"]
+        full_path = project_root / entry["path"]
+
+        sync_env_files(project_root, full_path)
+
+        tmux(f"new-window -dn '{wt_window}' -c '{full_path}'")
+        tmux(f"split-window -t '{wt_window}' -h -p 50 -c '{full_path}'")
+        tmux(f"split-window -t '{wt_window}.1' -v -p 50 -c '{full_path}'")
+        tmux(f"split-window -t '{wt_window}.2' -v -p 50 -c '{full_path}'")
+
+        for cmd in auto_env_setup_commands(project_root, full_path):
+            tmux(f"send-keys -t '{wt_window}.3' '{cmd}' C-m")
+
+        tmux(f"send-keys -t '{wt_window}.1' 'claude' C-m")
+        tmux(f"send-keys -t '{wt_window}.2' 'nvim .' C-m")
+        tmux(f"select-pane -t '{wt_window}.1'")
+
+        print(f"Restored {wt_window} (branch: {entry['branch']})")
+
+    if not args.all:
+        print(f"\n{len(selected)} window(s) restored.")
+        input("Press Enter to close...")
+
+
 def cmd_overview(args: argparse.Namespace) -> None:
     project_root = get_project_root()
     wt_dir = project_root / ".worktrees"
@@ -505,6 +595,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_remove = sub.add_parser("remove", help="Remove a worktree and its tmux window")
     p_remove.add_argument("--force", action="store_true", help="Force removal even with uncommitted changes")
     p_remove.set_defaults(func=cmd_remove)
+
+    # restore
+    p_restore = sub.add_parser("restore", help="Restore tmux windows for orphaned worktrees")
+    p_restore.add_argument("--all", action="store_true", help="Restore all without fzf (for non-interactive use)")
+    p_restore.set_defaults(func=cmd_restore)
 
     # overview
     p_overview = sub.add_parser("overview", help="Show status of all active worktrees")

@@ -36,6 +36,10 @@
       "Bash(git push*)"
     ]
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
     "OTEL_METRICS_EXPORTER": "otlp"
@@ -52,6 +56,33 @@
           {
             "type": "command",
             "command": "notify-send 'Claude Code' 'Awaiting your input'"
+          }
+        ]
+      },
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py attention"
+          }
+        ]
+      },
+      {
+        "matcher": "elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py attention"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py idle"
           }
         ]
       }
@@ -72,6 +103,10 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/pre_tool_use.py"
+          },
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py working"
           }
         ]
       },
@@ -93,6 +128,17 @@
           {
             "type": "command",
             "command": "pyright --outputjson ${file} 2>/dev/null | head -20"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py idle"
           }
         ]
       }
