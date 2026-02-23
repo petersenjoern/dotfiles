@@ -1,10 +1,11 @@
 [tools]
-python = "3.11"
-uv = "0.6.5"
+python = "3.13"
+uv = "latest"
+jq = 'latest'
 
 [env]
 _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed']}
-
+DEV_ENV=""
 
 
 [tasks.install-deps]
