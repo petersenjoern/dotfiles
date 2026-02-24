@@ -118,6 +118,10 @@ copy $DEV_ENV/hypr/tiling-v2.conf $HOME/.config/hypr/
 # monitors
 copy $DEV_ENV/hypr/monitors.conf $HOME/.config/hypr/
 
+# ssh
+mkdir -p $HOME/.ssh
+copy $DEV_ENV/ssh/config $HOME/.ssh/config
+
 # tig
 copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
 

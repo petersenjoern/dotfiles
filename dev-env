@@ -95,6 +95,10 @@ copy "$(which fdfind)" $HOME/.local/bin/fd
 copy $DEV_ENV/fzf/key-bindings.zsh $HOME/.local/share/fzf/key-bindings.zsh
 copy $DEV_ENV/fzf/completion.zsh $HOME/.local/share/fzf/completion.zsh
 
+## ssh
+mkdir -p $HOME/.ssh
+copy $DEV_ENV/ssh/config $HOME/.ssh/config
+
 ## git
 copy $DEV_ENV/git/.gitconfig $HOME/.gitconfig
 copy $DEV_ENV/git/.gitignore $HOME/.gitignore
