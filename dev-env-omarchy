@@ -118,7 +118,6 @@ copy $DEV_ENV/hypr/tiling-v2.conf $HOME/.config/hypr/
 # monitors
 copy $DEV_ENV/hypr/monitors.conf $HOME/.config/hypr/
 
-
 # tig
 copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
 
@@ -128,3 +127,6 @@ copy $DEV_ENV/mouseless/config.yaml $HOME/.mouseless/configs/config.yaml
 #systemd
 copy $DEV_ENV/env/.config/systemd/user/backup-todo.timer $HOME/.config/systemd/user/backup-todo.timer
 copy $DEV_ENV/env/.config/systemd/user/backup-todo.service $HOME/.config/systemd/user/backup-todo.service
+
+#mise
+copy $DEV_ENV/mise.toml $HOME/mise.toml

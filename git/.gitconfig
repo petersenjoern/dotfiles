@@ -1,5 +1,3 @@
-[user]
-	name = Joern Petersen
 [includeIf "gitdir:~/repos/personal/"]
     path = ~/.gitconfig-personal
 [includeIf "gitdir:~/repos/work/"]

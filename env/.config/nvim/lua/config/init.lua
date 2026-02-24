@@ -1,6 +1,6 @@
-require("petersenj.set")
-require("petersenj.remap")
-require("petersenj.lazy_init")
+require("config.set")
+require("config.remap")
+require("config.lazy_init")
 
 -- DO.not
 -- DO NOT INCLUDE THIS
@@ -14,7 +14,7 @@ require("petersenj.lazy_init")
 -- DO.not
 
 local augroup = vim.api.nvim_create_augroup
-local petersenjGroup = augroup('ThePrimeagen', {})
+local configGroup = augroup('ThePrimeagen', {})
 
 local autocmd = vim.api.nvim_create_autocmd
 local yank_group = augroup('HighlightYank', {})
@@ -41,13 +41,13 @@ autocmd('TextYankPost', {
 })
 
 autocmd({"BufWritePre"}, {
-    group = petersenjGroup,
+    group = configGroup,
     pattern = "*",
     command = [[%s/\s\+$//e]],
 })
 
 autocmd('BufEnter', {
-    group = petersenjGroup,
+    group = configGroup,
     callback = function()
         if vim.bo.filetype == "zig" then
             vim.cmd.colorscheme("tokyonight-night")
@@ -59,7 +59,7 @@ autocmd('BufEnter', {
 
 
 autocmd('LspAttach', {
-    group = petersenjGroup,
+    group = configGroup,
     callback = function(e)
         local opts = { buffer = e.buf }
         vim.keymap.set("n", "gd", function() vim.lsp.buf.definition() end, opts)

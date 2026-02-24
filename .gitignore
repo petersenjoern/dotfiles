@@ -5,3 +5,5 @@
 **/secrets.yml
 **/secrets.sh
 logs/
+dotfiles.local.conf
+env/.local/scripts/datakit

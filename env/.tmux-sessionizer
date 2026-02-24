@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ "$(pwd)" == $HOME/repos ]]; then
+if [[ "$(pwd)" == ${DOTFILES_REPOS_DIR:-$HOME/repos} ]]; then
     clear
     return
 fi
@@ -39,7 +39,7 @@ fi
 # 4. todo window
 if ! window_exists "todo"; then
     tmux new-window -dn todo
-    tmux send-keys -t todo "nvim ~/repos/personal/TODO.md" C-m
+    tmux send-keys -t todo "nvim ${DOTFILES_TODO_PATH:-$HOME/repos/personal/TODO.md}" C-m
 fi
 
 # 5. services window (4 panes: be, fe, docker, dbeaver)
@@ -53,6 +53,6 @@ fi
 # 6. cheatsheet window
 if ! window_exists "cheatsheet"; then
     tmux new-window -dn cheatsheet
-    tmux send-keys -t cheatsheet "nvim ~/repos/personal/dotfiles/cheatsheet.md" C-m
+    tmux send-keys -t cheatsheet "nvim ${DEV_ENV:-$HOME/repos/personal/dotfiles}/cheatsheet.md" C-m
 fi
 

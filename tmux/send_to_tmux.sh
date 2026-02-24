@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # tmux session and window names
-TMUX_SESSION="JP"
+TMUX_SESSION="${DOTFILES_TMUX_SESSION:-dev}"
 TMUX_WINDOW_SERVICES="llm-services"
 TMUX_WINDOW_OBSERVABILITY="observability"
-PATH_TO_REPOS="$HOME/repos"
-PATH_TO_DOTFILES="$HOME/repos/personal/dotfiles"
+PATH_TO_REPOS="${DOTFILES_REPOS_DIR:-$HOME/repos}"
+PATH_TO_DOTFILES="${DEV_ENV:-$HOME/repos/personal/dotfiles}"
 
 # Construct the commands for each model
 OLLAMA_SHUTDOWN="systemctl stop ollama.service"

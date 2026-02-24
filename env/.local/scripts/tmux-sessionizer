@@ -22,7 +22,7 @@ hydrate() {
 if [[ $# -eq 1 ]]; then
     selected=$1
 else
-    selected=$(find ~/repos/ -mindepth 1 -maxdepth 2 -type d | /usr/bin/fzf)
+    selected=$(find ${DOTFILES_REPOS_DIR:-$HOME/repos}/ -mindepth 1 -maxdepth 2 -type d | /usr/bin/fzf)
 fi
 
 if [[ -z $selected ]]; then

@@ -1,8 +1,15 @@
 export XDG_CONFIG_HOME=$HOME/.config
 VIM="nvim"
 
+# Source local configuration (fill in dotfiles.local.conf once per machine)
+if [ -f "$HOME/repos/personal/dotfiles/dotfiles.local.conf" ]; then
+    source "$HOME/repos/personal/dotfiles/dotfiles.local.conf"
+elif [ -f "$HOME/.dotfiles.local.conf" ]; then
+    source "$HOME/.dotfiles.local.conf"
+fi
+
 PERSONAL=$XDG_CONFIG_HOME/personal
-DEV_ENV=$HOME/repos/personal/dotfiles
+DEV_ENV="${DOTFILES_REPOS_DIR:-$HOME/repos}/personal/dotfiles"
 
 for i in `find -L $PERSONAL`; do
     source $i

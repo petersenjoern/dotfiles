@@ -25,13 +25,13 @@ My goal is to maintain a consistent and productive environment across my machine
 * **LiteLLM**: proxy configuration for routing LLM requests
 
 ### Desktop & window management
-* **Hyprland**: tiling compositor bindings and monitor setup (Omarchy)
+* **Hyprland**: tiling compositor bindings and monitor setup
 * **GlazeWM**: tiling window manager for Windows
-* **Mouseless**: keyboard-driven navigation on Windows
+* **Mouseless**: keyboard-driven navigation
 
 ### Terminal & peripherals
 * **Alacritty**: terminal emulator config
-* **Ghostty**: terminal emulator config (managed via `env/.config/ghostty/`)
+* **Ghostty**: terminal emulator config
 * **Tig**: terminal git UI
 * **NuPhy**: custom keyboard layouts for NuPhy Air75
 
@@ -48,12 +48,29 @@ My goal is to maintain a consistent and productive environment across my machine
 1. Ensure you have a **backup** of all your configurations.
 2. Clone the repository
 ```bash
-git clone https://github.com/petersenjoern/dotfiles.git [path-to-folder]/dotfiles
+git clone <your-fork-url> [path-to-folder]/dotfiles
 export DEV_ENV="[path-to-folder]/dotfiles"
 cd $DEV_ENV
 ```
-3. Install Zsh and vim (find offical installation or look at my repo devenv)
-4. Run setup script (OBS: read `dev-env` or `dev-env-omarchy` for understanding how the dotfiles will be setup. Edit as required.
+3. **Personalize** — copy the example config and fill in your values:
+```bash
+cp dotfiles.local.conf.example dotfiles.local.conf
+# Edit dotfiles.local.conf with your name, paths, etc.
+```
+4. Set up git identity files referenced by `.gitconfig` includeIf:
+```bash
+# ~/.gitconfig-personal
+[user]
+    name = Your Name
+    email = you@example.com
+
+# ~/.gitconfig-work (if applicable)
+[user]
+    name = Your Name
+    email = you@work.com
+```
+5. Install Zsh and vim (find offical installation or look at my repo devenv)
+6. Run setup script (OBS: read `dev-env` or `dev-env-omarchy` for understanding how the dotfiles will be setup. Edit as required.
 ```bash
 # For generic/WSL environments (use --dry to preview changes)
 ./dev-env
@@ -63,5 +80,19 @@ source ~/.zshrc
 ```
 
 From now you can edit your configurations under `[path-to-folder/dotfiles]` and subsequently execute the setup script and `source ~/.zshrc` on any path.
+
+
+## Personalization
+
+All personal values live in a single file: **`dotfiles.local.conf`** (gitignored).
+Copy `dotfiles.local.conf.example` and fill in your values. Everything else derives from it.
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `DOTFILES_GIT_NAME` | Your git display name | — |
+| `DOTFILES_REPOS_DIR` | Root directory for all repos | `$HOME/repos` |
+| `DOTFILES_TODO_PATH` | Path to your TODO.md | `$HOME/repos/personal/TODO.md` |
+| `AWS_VAULT_FILE_PASSPHRASE` | aws-vault file backend passphrase | — |
+| `DOTFILES_TMUX_SESSION` | Default tmux session name (used by `send_to_tmux.sh`) | `dev` |
 
 
