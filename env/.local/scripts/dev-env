@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 (
-cd $HOME/repos/personal/dotfiles
+cd ${DEV_ENV:-$HOME/repos/personal/dotfiles}
 ./dev-env
 hash -r
 )

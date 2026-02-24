@@ -17,7 +17,7 @@ set -o pipefail
 #      0 * * * * $HOME/.local/scripts/backup-todo
 #
 # Configuration
-TODO_FILE="$HOME/repos/personal/TODO.md"
+TODO_FILE="${DOTFILES_TODO_PATH:-$HOME/repos/personal/TODO.md}"
 REMOTE_NAME="gdrive"
 REMOTE_PATH="Backups/todo"
 RETENTION_DAYS=7

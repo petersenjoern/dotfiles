@@ -2,10 +2,18 @@
 python = "3.13"
 uv = "latest"
 jq = 'latest'
+node = "25"
+aws-cli = "latest"
+aws-vault = "latest"
+"npm:aws-cdk" = "latest"
+bun = "latest"
+golang = "latest"
 
 [env]
 _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed']}
-DEV_ENV=""
+DEV_ENV="{{env.HOME}}/repos/personal/dotfiles"
+# ANTHROPIC_API_KEY = "{{ exec(command='pass show api/anthropic') }}"
+# AWS_BEARER_TOKEN_BEDROCK = "{{ exec(command='pass show api/aws-bedrock') }}"
 
 
 [tasks.install-deps]

@@ -1,5 +1,5 @@
 if vim.g.vscode then
-  -- require("petersenjvscode")
+  -- require("vscode")
 else
-  require("petersenj")
+  require("config")
 end
