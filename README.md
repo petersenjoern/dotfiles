@@ -57,18 +57,25 @@ cd $DEV_ENV
 cp dotfiles.local.conf.example dotfiles.local.conf
 # Edit dotfiles.local.conf with your name, paths, etc.
 ```
-4. Set up git identity files referenced by `.gitconfig` includeIf:
+4. Set up git identity and SSH signing files (not tracked in this repo):
 ```bash
 # ~/.gitconfig-personal
 [user]
     name = Your Name
     email = you@example.com
+    signingkey = ssh-ed25519 <your-personal-public-key>
 
 # ~/.gitconfig-work (if applicable)
 [user]
     name = Your Name
     email = you@work.com
+    signingkey = ssh-ed25519 <your-work-public-key>
+
+# ~/.ssh/allowed_signers
+you@example.com ssh-ed25519 <your-personal-public-key>
+you@work.com ssh-ed25519 <your-work-public-key>
 ```
+SSH keys are managed by 1Password's SSH agent. Generate keys in 1Password, add public keys to GitHub as both **authentication** and **signing** keys.
 5. Install Zsh and vim (find offical installation or look at my repo devenv)
 6. Run setup script (OBS: read `dev-env` or `dev-env-omarchy` for understanding how the dotfiles will be setup. Edit as required.
 ```bash
