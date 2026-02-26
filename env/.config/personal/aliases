@@ -35,6 +35,8 @@ alias nvim="$EDITOR"
 alias llmjq="llm jq"
 alias llmcmd="llm cmd"
 
+alias opr="op run --env-file=.env.tpl --"
+
 
 # Scripts execution
 alias ctypecheck="claude -p 'Run pyright on the entire project. List all errors grouped by file. For each error, suggest a fix but do not edit files.' --allowedTools 'Read,Bash,Grep,Glob'"
