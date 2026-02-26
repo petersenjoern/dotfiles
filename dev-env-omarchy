@@ -107,6 +107,7 @@ fi
 # claude code
 copy $DEV_ENV/claude/CLAUDE.md $HOME/.claude/CLAUDE.md
 copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
+copy $DEV_ENV/claude/statusline-command.sh $HOME/.claude/statusline-command.sh
 update_files $DEV_ENV/claude/hooks $HOME/.claude/hooks
 update_files $DEV_ENV/claude/commands $HOME/.claude/commands
 

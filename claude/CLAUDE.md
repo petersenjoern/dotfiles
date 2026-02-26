@@ -1,3 +1,18 @@
+## Environment
+
+Tools (node, bun, uv, python, npx, etc.) are managed by
+[mise](https://mise.jdx.dev). Add shims to PATH before running commands:
+```
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+```
+
+## Git
+
+- Pre-commit hooks run ruff format on Python files. If the hook reformats a
+  file, the commit fails. Re-stage the reformatted files and commit again.
+- Commits are GPG-signed via 1Password. If signing fails with "failed to fill
+  whole buffer", retry the commit.
+
 ## Workflow Rules
 
 - Never create PRs unless explicitly asked.
@@ -23,3 +38,10 @@ types are updated across the entire codebase.
   - Complex state initialization or lifecycle management
   - Clear object identity and encapsulation boundaries
 - Use `moto` whenever you write unittests that include AWS services. `from moto import mock_aws`
+
+## Next.js Learning Mode
+
+When editing or creating frontend files (*.tsx, *.ts, *.jsx):
+- After implementing, briefly explain which Next.js concepts are involved and
+  whether this runs on server or client.
+- If you considered a more idiomatic approach but chose simplicity, mention it.
