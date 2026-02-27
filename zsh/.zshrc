@@ -119,13 +119,10 @@ setopt HIST_IGNORE_ALL_DUPS  # Remove older duplicates
 setopt HIST_SAVE_NO_DUPS     # Don't save duplicates to file
 setopt HIST_FIND_NO_DUPS     # Don't show duplicates when searching
 setopt SHARE_HISTORY         # Share history between sessions
+setopt HIST_IGNORE_SPACE     # Space-prefixed commands excluded from history
 setopt APPEND_HISTORY        # Append to history file
 setopt INC_APPEND_HISTORY    # Add commands immediately
 
-# History search
-# Bind the up and down arrow keys to search through your history for commands that start with whatever you've already typed:
-bindkey "^[[A" history-beginning-search-backward
-bindkey "^[[B" history-beginning-search-forward
 
 # histfile
 HISTFILE=~/.zsh_history
@@ -213,6 +210,9 @@ export PS1="\W \$ "
 # Mise
 # adjust this to be dynamic
 # eval "$(~/.local/bin/mise activate zsh)"
+# Atuin - shell history sync (replaces Ctrl+R and up/down arrow history search)
+eval "$(atuin init zsh)"
+
 eval "$(/usr/bin/mise activate zsh)"
 #
 # . "$HOME/.local/bin/env"

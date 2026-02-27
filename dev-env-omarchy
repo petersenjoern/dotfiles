@@ -135,3 +135,7 @@ copy $DEV_ENV/env/.config/systemd/user/backup-todo.service $HOME/.config/systemd
 
 #mise
 copy $DEV_ENV/mise.toml $HOME/mise.toml
+
+# atuin
+mkdir -p $HOME/.config/atuin
+copy $DEV_ENV/atuin/config.toml $HOME/.config/atuin/config.toml
