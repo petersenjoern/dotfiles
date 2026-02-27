@@ -1,0 +1,23 @@
+## Atuin configuration
+## See: https://docs.atuin.sh/configuration/config/
+
+## Sync settings (using Atuin cloud; switch sync_address for self-hosted later)
+# sync_address = "https://api.atuin.sh"
+
+## Search
+search_mode = "fuzzy"
+filter_mode = "global"
+filter_mode_shell_up_key_binding = "host"
+style = "compact"
+
+## Privacy
+secrets_filter = true  # pragma: allowlist secret
+history_filter = [
+    "^export .*TOKEN",
+    "^export .*SECRET",
+    "^export .*PASSWORD",
+    "^export .*KEY=",
+    "^export .*CREDENTIAL",
+    "op read ",
+    "op item ",
+]
