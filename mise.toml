@@ -12,8 +12,6 @@ golang = "latest"
 [env]
 _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed']}
 DEV_ENV="{{env.HOME}}/repos/personal/dotfiles"
-# ANTHROPIC_API_KEY = "{{ exec(command='op read op://Personal/anthropic-api/credential') }}"
-# AWS_BEARER_TOKEN_BEDROCK = "{{ exec(command='op read op://Work/aws-bedrock/credential') }}"
 
 
 [tasks.install-deps]
