@@ -59,7 +59,7 @@ for entry in "${flagged[@]}"; do
     lineno="${entry%%:*}"
     content="${entry#*:}"
     echo ""
-    echo "  $content"
+    printf '  %s\n' "$content"
     echo ""
 
     while true; do
@@ -84,6 +84,19 @@ for entry in "${flagged[@]}"; do
         esac
     done
 done
+
+# Expand to include multiline continuation lines
+expanded=()
+for lineno in "${lines_to_remove[@]}"; do
+    expanded+=("$lineno")
+    line=$(sed -n "${lineno}p" "$BACKUP")
+    while [[ "$line" == *$'\\' ]]; do
+        lineno=$((lineno + 1))
+        expanded+=("$lineno")
+        line=$(sed -n "${lineno}p" "$BACKUP")
+    done
+done
+lines_to_remove=("${expanded[@]}")
 
 if [[ ${#lines_to_remove[@]} -eq 0 ]]; then
     echo ""
