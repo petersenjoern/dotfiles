@@ -11,7 +11,13 @@
 op_env() {
   local var="$1" ref="$2"
   if [[ -z "${(P)var}" ]]; then
-    export "$var=$(op read "$ref")"
+    local val
+    if val=$(op read "$ref" 2>/dev/null); then
+      export "$var=$val"
+    else
+      echo "op_env: failed to read $ref" >&2
+      return 1
+    fi
   fi
 }
 
