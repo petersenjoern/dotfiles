@@ -2,15 +2,6 @@
     path = ~/.gitconfig-personal
 [includeIf "gitdir:~/repos/work/"]
     path = ~/.gitconfig-work
-[gpg]
-    format = ssh
-[gpg "ssh"]
-    program = /opt/1Password/op-ssh-sign
-    allowedSignersFile = ~/.ssh/allowed_signers
-[commit]
-    gpgsign = true
-[tag]
-    gpgsign = true
 [color]
     branch = auto
     diff = auto
