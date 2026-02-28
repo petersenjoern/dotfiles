@@ -103,3 +103,28 @@ Copy `dotfiles.local.conf.example` and fill in your values. Everything else deri
 | `DOTFILES_TMUX_SESSION` | Default tmux session name (used by `send_to_tmux.sh`) | `dev` |
 
 
+### Shell History Sync (Atuin)
+
+Atuin syncs shell history across machines with encrypted cloud sync.
+
+1. Install Atuin:
+```bash
+pacman -S atuin
+```
+2. Run `./dev-env-omarchy` to deploy the Atuin config
+3. Register or log in:
+```bash
+# First machine
+atuin register -u <username> -e <email>
+
+# Subsequent machines
+atuin login -u <username>
+```
+4. Clean existing history (interactive — review each flagged entry):
+```bash
+atuin-history-scrub
+```
+5. Import cleaned history:
+```bash
+atuin import auto
+```

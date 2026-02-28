@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HISTFILE="${1:-$HOME/.zsh_history}"
+
+if [[ ! -f "$HISTFILE" ]]; then
+    echo "History file not found: $HISTFILE"
+    exit 1
+fi
+
+BACKUP="${HISTFILE}.backup.$(date +%Y%m%d%H%M%S)"
+cp "$HISTFILE" "$BACKUP"
+echo "Backed up history to: $BACKUP"
+
+# Same patterns used in atuin/config.toml history_filter
+PATTERNS=(
+    "^: [0-9]*:[0-9]*;export .*TOKEN"
+    "^: [0-9]*:[0-9]*;export .*SECRET"
+    "^: [0-9]*:[0-9]*;export .*PASSWORD"
+    "^: [0-9]*:[0-9]*;export .*KEY="
+    "^: [0-9]*:[0-9]*;export .*CREDENTIAL"
+    "^: [0-9]*:[0-9]*;op read "
+    "^: [0-9]*:[0-9]*;op item "
+    "export .*TOKEN"
+    "export .*SECRET"
+    "export .*PASSWORD"
+    "export .*KEY="
+    "export .*CREDENTIAL"
+    "op read "
+    "op item "
+)
+
+# Build combined regex
+combined=""
+for p in "${PATTERNS[@]}"; do
+    if [[ -n "$combined" ]]; then
+        combined="$combined|$p"
+    else
+        combined="$p"
+    fi
+done
+
+# Find flagged lines
+mapfile -t flagged < <(grep -nE "$combined" "$HISTFILE" || true)
+
+if [[ ${#flagged[@]} -eq 0 ]]; then
+    echo "No suspicious entries found. History is clean."
+    exit 0
+fi
+
+echo ""
+echo "Found ${#flagged[@]} potentially sensitive entries."
+echo "Review each one: [r]emove, [k]eep, [q]uit"
+echo "---"
+
+lines_to_remove=()
+
+for entry in "${flagged[@]}"; do
+    lineno="${entry%%:*}"
+    content="${entry#*:}"
+    echo ""
+    printf '  %s\n' "$content"
+    echo ""
+
+    while true; do
+        read -rp "  [r]emove / [k]eep / [q]uit? " choice
+        case "$choice" in
+            r|R)
+                lines_to_remove+=("$lineno")
+                echo "  -> marked for removal"
+                break
+                ;;
+            k|K)
+                echo "  -> keeping"
+                break
+                ;;
+            q|Q)
+                echo "Quitting. No changes made to history."
+                exit 0
+                ;;
+            *)
+                echo "  Invalid choice. Use r, k, or q."
+                ;;
+        esac
+    done
+done
+
+# Expand to include multiline continuation lines
+expanded=()
+for lineno in "${lines_to_remove[@]}"; do
+    expanded+=("$lineno")
+    line=$(sed -n "${lineno}p" "$BACKUP")
+    while [[ "$line" == *$'\\' ]]; do
+        lineno=$((lineno + 1))
+        expanded+=("$lineno")
+        line=$(sed -n "${lineno}p" "$BACKUP")
+    done
+done
+lines_to_remove=("${expanded[@]}")
+
+if [[ ${#lines_to_remove[@]} -eq 0 ]]; then
+    echo ""
+    echo "No entries marked for removal. History unchanged."
+    exit 0
+fi
+
+echo ""
+echo "Removing ${#lines_to_remove[@]} entries..."
+
+# Build sed delete expression
+sed_expr=""
+for lineno in "${lines_to_remove[@]}"; do
+    sed_expr="${sed_expr}${lineno}d;"
+done
+
+sed -i "$sed_expr" "$HISTFILE"
+
+echo "Done. Removed ${#lines_to_remove[@]} entries from $HISTFILE"
+echo "Original backed up at: $BACKUP"
+echo ""
+echo "Next steps:"
+echo "  1. atuin import auto    # import cleaned history"
+echo "  2. atuin sync           # sync to cloud"
