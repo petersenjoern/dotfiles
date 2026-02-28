@@ -1,7 +1,7 @@
 # dotfiles.local.conf — fill this in once, everything else adapts
 # Copy to dotfiles.local.conf and adjust values for your machine.
 
-DOTFILES_GIT_NAME="Your Name"
-DOTFILES_REPOS_DIR="$HOME/repos"
-DOTFILES_TODO_PATH="$HOME/repos/personal/TODO.md"
-AWS_VAULT_FILE_PASSPHRASE=""
+export DOTFILES_GIT_NAME="Your Name"
+export DOTFILES_REPOS_DIR="$HOME/repos"
+export DOTFILES_TODO_PATH="$HOME/repos/personal/TODO.md"
+export AWS_VAULT_FILE_PASSPHRASE=""

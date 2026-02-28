@@ -9,7 +9,7 @@ elif [ -f "$HOME/.dotfiles.local.conf" ]; then
 fi
 
 PERSONAL=$XDG_CONFIG_HOME/personal
-DEV_ENV="${DOTFILES_REPOS_DIR:-$HOME/repos}/personal/dotfiles"
+export DEV_ENV="${DOTFILES_REPOS_DIR:-$HOME/repos}/personal/dotfiles"
 
 for i in `find -L $PERSONAL`; do
     source $i
@@ -44,6 +44,7 @@ addToPathFront() {
     fi
 }
 
+addToPathFront $HOME/.local/share/mise/shims
 addToPathFront $HOME/.local/.npm-global/bin
 addToPathFront $HOME/.local/apps
 addToPathFront $HOME/.local/scripts
