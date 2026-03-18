@@ -302,6 +302,54 @@ def select_branch(project_root: Path, branches: list[str]) -> tuple[str, str]:
         return ("cancel", "")
 
 
+# ── Window layout ─────────────────────────────────────────────────────────────
+
+
+def create_dev_layout(
+    window_name: str, wt_path: Path, *, detached: bool = False
+) -> dict[str, str]:
+    """Create the 5-pane dev layout and return pane IDs.
+
+    Layout:
+    ┌──────────┬──────────┐
+    │          │          │
+    │   Nvim   │  Claude  │
+    │          │          │
+    ├──────────┼────┬─────┤
+    │  Shell   │ BE │ FE  │
+    └──────────┴────┴─────┘
+
+    Returns dict with keys: nvim, claude, shell, be, fe (values are pane IDs).
+    """
+    p = {}
+
+    # Always create window detached for reliable pane ID capture
+    tmux(f"new-window -d -n '{window_name}' -c '{wt_path}'")
+    p["nvim"] = tmux(f"list-panes -t '{window_name}' -F '#{{pane_id}}'")
+    # Split right → claude pane (full-height vertical border, left keeps 60%)
+    p["claude"] = tmux(
+        f"split-window -dPF '#{{pane_id}}' -t '{p['nvim']}' -h -p 40 -c '{wt_path}'"
+    )
+    # Split nvim bottom → shell pane (30% of left column)
+    p["shell"] = tmux(
+        f"split-window -dPF '#{{pane_id}}' -t '{p['nvim']}' -v -p 30 -c '{wt_path}'"
+    )
+    # Split claude bottom → be pane (30% of right column)
+    p["be"] = tmux(
+        f"split-window -dPF '#{{pane_id}}' -t '{p['claude']}' -v -p 30 -c '{wt_path}'"
+    )
+    # Split be right → fe pane
+    p["fe"] = tmux(
+        f"split-window -dPF '#{{pane_id}}' -t '{p['be']}' -h -p 50 -c '{wt_path}'"
+    )
+    # Switch to window if not detached
+    if not detached:
+        tmux(f"select-window -t '{window_name}'")
+
+    return p
+
+
+
 # ── Subcommands ────────────────────────────────────────────────────────────────
 
 
@@ -354,23 +402,18 @@ def cmd_create(args: argparse.Namespace) -> None:
     # Symlink .env files from main worktree
     sync_env_files(project_root, wt_path)
 
-    # Create tmux window with 2x2 grid layout
-    # Pane 1: top-left (claude), Pane 2: top-right (nvim)
-    # Pane 3: bottom-left (shell), Pane 4: bottom-right (shell)
-    tmux(f"new-window -n '{window_name}' -c '{wt_path}'")
-    tmux(f"split-window -t '{window_name}' -h -p 50 -c '{wt_path}'")
-    tmux(f"split-window -t '{window_name}.1' -v -p 50 -c '{wt_path}'")
-    tmux(f"split-window -t '{window_name}.2' -v -p 50 -c '{wt_path}'")
+    # Create tmux window with dev layout
+    panes = create_dev_layout(window_name, wt_path)
 
-    # Run env setup in bottom-left pane
+    # Run env setup in shell pane
     if not args.no_setup:
         for cmd in auto_env_setup_commands(project_root, wt_path):
-            tmux(f"send-keys -t '{window_name}.3' '{cmd}' C-m")
+            tmux(f"send-keys -t '{panes['shell']}' '{cmd}' C-m")
 
-    # Start claude in top-left, nvim in top-right
-    tmux(f"send-keys -t '{window_name}.1' 'claude' C-m")
-    tmux(f"send-keys -t '{window_name}.2' 'nvim .' C-m")
-    tmux(f"select-pane -t '{window_name}.1'")
+    # Start nvim and claude in their panes
+    tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
+    tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
+    tmux(f"select-pane -t '{panes['claude']}'")
 
     manifest_add(project_root, window_name, branch, f".worktrees/{wt_name}")
     print(f"Window {window_name} ready.")
@@ -528,17 +571,14 @@ def cmd_restore(args: argparse.Namespace) -> None:
 
         sync_env_files(project_root, full_path)
 
-        tmux(f"new-window -dn '{wt_window}' -c '{full_path}'")
-        tmux(f"split-window -t '{wt_window}' -h -p 50 -c '{full_path}'")
-        tmux(f"split-window -t '{wt_window}.1' -v -p 50 -c '{full_path}'")
-        tmux(f"split-window -t '{wt_window}.2' -v -p 50 -c '{full_path}'")
+        panes = create_dev_layout(wt_window, full_path, detached=True)
 
         for cmd in auto_env_setup_commands(project_root, full_path):
-            tmux(f"send-keys -t '{wt_window}.3' '{cmd}' C-m")
+            tmux(f"send-keys -t '{panes['shell']}' '{cmd}' C-m")
 
-        tmux(f"send-keys -t '{wt_window}.1' 'claude' C-m")
-        tmux(f"send-keys -t '{wt_window}.2' 'nvim .' C-m")
-        tmux(f"select-pane -t '{wt_window}.1'")
+        tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
+        tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
+        tmux(f"select-pane -t '{panes['claude']}'")
 
         print(f"Restored {wt_window} (branch: {entry['branch']})")
 
