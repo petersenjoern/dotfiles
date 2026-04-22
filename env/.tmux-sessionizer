@@ -33,7 +33,7 @@ fi
 
 # 3b. restore worktree windows from manifest (resurrect support)
 if [[ -n "$(git rev-parse --show-toplevel 2>/dev/null)" ]]; then
-    "$HOME/.local/scripts/tmux-worktree" restore --all 2>/dev/null
+    "$HOME/.local/scripts/tmux-worktree" restore --all 2>>/tmp/tmux-worktree.log
 fi
 
 # 4. todo window

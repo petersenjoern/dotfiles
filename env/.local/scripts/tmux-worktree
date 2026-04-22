@@ -12,8 +12,8 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
-
 
 # ── Shell helpers ──────────────────────────────────────────────────────────────
 
@@ -24,6 +24,22 @@ def run(cmd: str, cwd: str | None = None, check: bool = True) -> str:
     if check and r.returncode != 0:
         return ""
     return r.stdout.strip()
+
+
+def tmux_split(
+    target: str, wt_path: Path, *, horizontal: bool = False, percent: int
+) -> str:
+    """Split a tmux pane and return the new pane ID, retrying on failure."""
+    direction = "-h" if horizontal else "-v"
+    cmd = f"split-window -dPF '#{{pane_id}}' -t '{target}' {direction} -p {percent} -c '{wt_path}'"
+    for attempt in range(3):
+        pane_id = tmux(cmd)
+        if pane_id:
+            return pane_id
+        time.sleep(0.1 * (attempt + 1))
+        print(f"  retry split (attempt {attempt + 2}): {cmd}", file=sys.stderr)
+    print(f"ERROR: split-window failed after 3 attempts: {cmd}", file=sys.stderr)
+    return ""
 
 
 def tmux(cmd: str) -> str:
@@ -159,9 +175,7 @@ def worktree_status(wt_path: str) -> tuple[str, str]:
 def sync_env_files(project_root: Path, wt_path: Path) -> None:
     """Symlink .env* files from main worktree into the new worktree."""
     # Get list of tracked files to skip (they're already in the worktree)
-    tracked = set(
-        git("ls-files --full-name", cwd=str(project_root)).splitlines()
-    )
+    tracked = set(git("ls-files --full-name", cwd=str(project_root)).splitlines())
 
     # Find all .env* files in the main worktree
     env_files: list[Path] = []
@@ -223,7 +237,11 @@ def auto_env_setup_commands(project_root: Path, wt_path: Path) -> list[str]:
     elif (wt_path / "pyproject.toml").exists():
         cmds.append("uv sync" if run("which uv", check=False) else "pip install -e .")
     elif (wt_path / "requirements.txt").exists():
-        cmds.append("uv pip install -r requirements.txt" if run("which uv", check=False) else "pip install -r requirements.txt")
+        cmds.append(
+            "uv pip install -r requirements.txt"
+            if run("which uv", check=False)
+            else "pip install -r requirements.txt"
+        )
 
     return cmds
 
@@ -244,13 +262,21 @@ def get_available_branches(project_root: Path) -> list[str]:
             in_use.add(line.removeprefix("branch refs/heads/"))
 
     # Local branches
-    local_out = git("branch --sort=-committerdate --format='%(refname:short)'", cwd=str(project_root))
-    local_branches = [b.strip() for b in local_out.splitlines() if b.strip()] if local_out else []
+    local_out = git(
+        "branch --sort=-committerdate --format='%(refname:short)'",
+        cwd=str(project_root),
+    )
+    local_branches = (
+        [b.strip() for b in local_out.splitlines() if b.strip()] if local_out else []
+    )
     local_set = set(local_branches)
     available_local = [b for b in local_branches if b not in in_use]
 
     # Remote branches (exclude HEAD pointer and branches that have a local counterpart)
-    remote_out = git("branch -r --sort=-committerdate --format='%(refname:short)'", cwd=str(project_root))
+    remote_out = git(
+        "branch -r --sort=-committerdate --format='%(refname:short)'",
+        cwd=str(project_root),
+    )
     available_remote: list[str] = []
     if remote_out:
         for rb in remote_out.splitlines():
@@ -274,12 +300,14 @@ def select_branch(project_root: Path, branches: list[str]) -> tuple[str, str]:
 
     try:
         result = subprocess.run(
-            ["fzf",
-             "--header=ctrl-n: create new branch",
-             "--reverse",
-             f"--preview={preview_cmd}",
-             "--preview-window=right:50%",
-             "--expect=ctrl-n"],
+            [
+                "fzf",
+                "--header=ctrl-n: create new branch",
+                "--reverse",
+                f"--preview={preview_cmd}",
+                "--preview-window=right:50%",
+                "--expect=ctrl-n",
+            ],
             input="\n".join(branches),
             capture_output=True,
             text=True,
@@ -321,33 +349,60 @@ def create_dev_layout(
 
     Returns dict with keys: nvim, claude, shell, be, fe (values are pane IDs).
     """
-    p = {}
+    p: dict[str, str] = {}
 
     # Always create window detached for reliable pane ID capture
     tmux(f"new-window -d -n '{window_name}' -c '{wt_path}'")
     p["nvim"] = tmux(f"list-panes -t '{window_name}' -F '#{{pane_id}}'")
-    # Split right → claude pane (full-height vertical border, left keeps 60%)
-    p["claude"] = tmux(
-        f"split-window -dPF '#{{pane_id}}' -t '{p['nvim']}' -h -p 40 -c '{wt_path}'"
-    )
+    if not p["nvim"]:
+        print(f"ERROR: failed to create window '{window_name}'", file=sys.stderr)
+        return p
+
+    # Keep dead panes visible for diagnostics until layout is confirmed
+    tmux(f"set-option -t '{window_name}' remain-on-exit on")
+
+    # Split right → claude pane (full-height vertical border, left keeps 50%)
+    p["claude"] = tmux_split(p["nvim"], wt_path, horizontal=True, percent=50)
     # Split nvim bottom → shell pane (30% of left column)
-    p["shell"] = tmux(
-        f"split-window -dPF '#{{pane_id}}' -t '{p['nvim']}' -v -p 30 -c '{wt_path}'"
-    )
+    p["shell"] = tmux_split(p["nvim"], wt_path, percent=30)
     # Split claude bottom → be pane (30% of right column)
-    p["be"] = tmux(
-        f"split-window -dPF '#{{pane_id}}' -t '{p['claude']}' -v -p 30 -c '{wt_path}'"
-    )
+    if p["claude"]:
+        p["be"] = tmux_split(p["claude"], wt_path, percent=30)
     # Split be right → fe pane
-    p["fe"] = tmux(
-        f"split-window -dPF '#{{pane_id}}' -t '{p['be']}' -h -p 50 -c '{wt_path}'"
-    )
+    if p.get("be"):
+        p["fe"] = tmux_split(p["be"], wt_path, horizontal=True, percent=50)
+
+    # Wait for shells to initialize, then check for dead panes
+    time.sleep(1.5)
+    actual = tmux(f"list-panes -t '{window_name}' -F '#{{pane_id}} #{{pane_dead}}'")
+    if actual:
+        for line in actual.splitlines():
+            parts = line.split()
+            if len(parts) == 2 and parts[1] == "1":
+                dead_id = parts[0]
+                name = next((n for n, pid in p.items() if pid == dead_id), "?")
+                print(
+                    f"WARNING: pane '{name}' ({dead_id}) died — respawning",
+                    file=sys.stderr,
+                )
+                tmux(f"respawn-pane -t '{dead_id}' -c '{wt_path}'")
+
+    # Verify all panes exist and are alive
+    actual = tmux(f"list-panes -t '{window_name}' -F '#{{pane_id}}'")
+    actual_ids = set(actual.splitlines()) if actual else set()
+    for name, pane_id in list(p.items()):
+        if not pane_id or pane_id not in actual_ids:
+            print(f"WARNING: pane '{name}' missing (id={pane_id!r})", file=sys.stderr)
+            p.pop(name, None)
+
+    # Restore default behavior — dead panes will close normally from here
+    tmux(f"set-option -t '{window_name}' remain-on-exit off")
+
     # Switch to window if not detached
     if not detached:
         tmux(f"select-window -t '{window_name}'")
 
     return p
-
 
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
@@ -367,10 +422,14 @@ def cmd_create(args: argparse.Namespace) -> None:
             elif action == "select":
                 branch = selected
             else:  # "new"
-                branch_input = input("Enter branch name (leave empty for auto-generated wt/N): ").strip()
+                branch_input = input(
+                    "Enter branch name (leave empty for auto-generated wt/N): "
+                ).strip()
                 branch = branch_input or None
         else:
-            branch_input = input("Enter branch name (leave empty for auto-generated wt/N): ").strip()
+            branch_input = input(
+                "Enter branch name (leave empty for auto-generated wt/N): "
+            ).strip()
             branch = branch_input or None
 
     num = next_wt_number()
@@ -384,16 +443,23 @@ def cmd_create(args: argparse.Namespace) -> None:
 
     # Create worktree (existing local, remote tracking, or new branch)
     remote_ref = None
-    if "/" in branch and git(f"show-ref --verify refs/remotes/{branch}", cwd=str(project_root)):
+    if "/" in branch and git(
+        f"show-ref --verify refs/remotes/{branch}", cwd=str(project_root)
+    ):
         # Remote branch selected — create local tracking branch
         remote_ref = branch
         branch = branch.split("/", 1)[1]
 
-    branch_exists = bool(git(f"show-ref --verify refs/heads/{branch}", cwd=str(project_root)))
+    branch_exists = bool(
+        git(f"show-ref --verify refs/heads/{branch}", cwd=str(project_root))
+    )
     if branch_exists:
         git(f"worktree add '{wt_path}' '{branch}'", cwd=str(project_root))
     elif remote_ref:
-        git(f"worktree add '{wt_path}' -b '{branch}' '{remote_ref}'", cwd=str(project_root))
+        git(
+            f"worktree add '{wt_path}' -b '{branch}' '{remote_ref}'",
+            cwd=str(project_root),
+        )
     else:
         git(f"worktree add '{wt_path}' -b '{branch}'", cwd=str(project_root))
 
@@ -406,14 +472,16 @@ def cmd_create(args: argparse.Namespace) -> None:
     panes = create_dev_layout(window_name, wt_path)
 
     # Run env setup in shell pane
-    if not args.no_setup:
+    if not args.no_setup and "shell" in panes:
         for cmd in auto_env_setup_commands(project_root, wt_path):
             tmux(f"send-keys -t '{panes['shell']}' '{cmd}' C-m")
 
     # Start nvim and claude in their panes
-    tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
-    tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
-    tmux(f"select-pane -t '{panes['claude']}'")
+    if "nvim" in panes:
+        tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
+    if "claude" in panes:
+        tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
+        tmux(f"select-pane -t '{panes['claude']}'")
 
     manifest_add(project_root, window_name, branch, f".worktrees/{wt_name}")
     print(f"Window {window_name} ready.")
@@ -432,8 +500,8 @@ def cmd_remove(args: argparse.Namespace) -> None:
     preview_script = (
         f"wt_num=$(echo {{}} | sed 's/cc-wt-//'); "
         f"wt_path='{project_root}/.worktrees/wt-'$wt_num; "
-        f"if [ -d \"$wt_path\" ]; then "
-        f"  branch=$(git -C \"$wt_path\" branch --show-current 2>/dev/null || echo unknown); "
+        f'if [ -d "$wt_path" ]; then '
+        f'  branch=$(git -C "$wt_path" branch --show-current 2>/dev/null || echo unknown); '
         f"  echo \"Branch: $branch\"; echo ''; "
         f"  echo '--- Status ---'; git -C \"$wt_path\" status --short 2>/dev/null; "
         f"  echo ''; echo '--- Unpushed ---'; "
@@ -443,9 +511,15 @@ def cmd_remove(args: argparse.Namespace) -> None:
 
     try:
         result = subprocess.run(
-            ["fzf", "--header=Select worktree to remove",
-             f"--preview={preview_script}", "--preview-window=right:50%"],
-            input="\n".join(windows), capture_output=True, text=True,
+            [
+                "fzf",
+                "--header=Select worktree to remove",
+                f"--preview={preview_script}",
+                "--preview-window=right:50%",
+            ],
+            input="\n".join(windows),
+            capture_output=True,
+            text=True,
         )
         selected = result.stdout.strip()
     except FileNotFoundError:
@@ -474,13 +548,18 @@ def cmd_remove(args: argparse.Namespace) -> None:
     has_unpushed = bool(unpushed)
 
     main_branch = git("symbolic-ref refs/remotes/origin/HEAD", cwd=str(project_root))
-    main_branch = main_branch.removeprefix("refs/remotes/origin/") if main_branch else ""
+    main_branch = (
+        main_branch.removeprefix("refs/remotes/origin/") if main_branch else ""
+    )
     is_unmerged = False
     if main_branch and branch != main_branch:
         git("fetch origin", cwd=str(project_root))
         r = subprocess.run(
             f"git diff 'origin/{main_branch}...{branch}' --quiet",
-            shell=True, capture_output=True, text=True, cwd=str(project_root),
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=str(project_root),
         )
         is_unmerged = r.returncode != 0
 
@@ -533,7 +612,8 @@ def cmd_restore(args: argparse.Namespace) -> None:
     # Find restorable entries: directory exists, window does not
     existing_windows = set(list_wt_windows())
     restorable = [
-        e for e in entries
+        e
+        for e in entries
         if (project_root / e["path"]).is_dir() and e["window"] not in existing_windows
     ]
 
@@ -552,9 +632,15 @@ def cmd_restore(args: argparse.Namespace) -> None:
         labels = [f"{e['window']}  ({e['branch']})" for e in restorable]
         try:
             result = subprocess.run(
-                ["fzf", "--header=Select worktree(s) to restore (TAB to multi-select)",
-                 "--multi", "--reverse"],
-                input="\n".join(labels), capture_output=True, text=True,
+                [
+                    "fzf",
+                    "--header=Select worktree(s) to restore (TAB to multi-select)",
+                    "--multi",
+                    "--reverse",
+                ],
+                input="\n".join(labels),
+                capture_output=True,
+                text=True,
             )
         except FileNotFoundError:
             sys.exit("Error: fzf not found")
@@ -573,12 +659,15 @@ def cmd_restore(args: argparse.Namespace) -> None:
 
         panes = create_dev_layout(wt_window, full_path, detached=True)
 
-        for cmd in auto_env_setup_commands(project_root, full_path):
-            tmux(f"send-keys -t '{panes['shell']}' '{cmd}' C-m")
+        if "shell" in panes:
+            for cmd in auto_env_setup_commands(project_root, full_path):
+                tmux(f"send-keys -t '{panes['shell']}' '{cmd}' C-m")
 
-        tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
-        tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
-        tmux(f"select-pane -t '{panes['claude']}'")
+        if "nvim" in panes:
+            tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
+        if "claude" in panes:
+            tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
+            tmux(f"select-pane -t '{panes['claude']}'")
 
         print(f"Restored {wt_window} (branch: {entry['branch']})")
 
@@ -627,18 +716,30 @@ def build_parser() -> argparse.ArgumentParser:
 
     # create
     p_create = sub.add_parser("create", help="Create a new worktree and tmux window")
-    p_create.add_argument("-b", "--branch", help="Branch name (default: auto-generated wt/N)")
+    p_create.add_argument(
+        "-b", "--branch", help="Branch name (default: auto-generated wt/N)"
+    )
     p_create.add_argument("--no-setup", action="store_true", help="Skip auto env setup")
     p_create.set_defaults(func=cmd_create)
 
     # remove
     p_remove = sub.add_parser("remove", help="Remove a worktree and its tmux window")
-    p_remove.add_argument("--force", action="store_true", help="Force removal even with uncommitted changes")
+    p_remove.add_argument(
+        "--force",
+        action="store_true",
+        help="Force removal even with uncommitted changes",
+    )
     p_remove.set_defaults(func=cmd_remove)
 
     # restore
-    p_restore = sub.add_parser("restore", help="Restore tmux windows for orphaned worktrees")
-    p_restore.add_argument("--all", action="store_true", help="Restore all without fzf (for non-interactive use)")
+    p_restore = sub.add_parser(
+        "restore", help="Restore tmux windows for orphaned worktrees"
+    )
+    p_restore.add_argument(
+        "--all",
+        action="store_true",
+        help="Restore all without fzf (for non-interactive use)",
+    )
     p_restore.set_defaults(func=cmd_restore)
 
     # overview

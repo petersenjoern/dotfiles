@@ -22,12 +22,15 @@ return {
         -- Register all keymaps with descriptions
         wk.add({
             -- Groups
+            { "<leader>c", group = "copy/misc" },
             { "<leader>d", group = "debug" },
             { "<leader>t", group = "test" },
             { "<leader>p", group = "project" },
             { "<leader>e", group = "error handling (Go)" },
             { "<leader>h", group = "git hunks" },
             { "<leader>s", group = "search/replace" },
+            { "<leader>v", group = "vim LSP" },
+            { "<leader>f", group = "file/format" },
 
             -- From remap.lua
             { "<leader>pv", desc = "File explorer (netrw)" },
@@ -40,9 +43,22 @@ return {
             { "<leader>x", desc = "Make file executable" },
             { "<leader><leader>", desc = "Source file" },
             { "<leader>zig", desc = "Restart LSP" },
+            { "<leader>cp", desc = "Copy file path" },
             { "<leader>ca", desc = "Cellular automaton" },
             { "<leader>ct", desc = "Toggle cloak" },
             { "<leader>D", desc = "Delete to void register" },
+            { "<leader>s", desc = "Search & replace word under cursor" },
+            { "<leader>p", desc = "Paste over selection (keep clipboard)", mode = "x" },
+
+            -- From remap.lua (non-leader)
+            { "J", desc = "Move lines down", mode = "v" },
+            { "K", desc = "Move lines up", mode = "v" },
+            { "<C-d>", desc = "Half-page down (centered)" },
+            { "<C-u>", desc = "Half-page up (centered)" },
+            { "<C-f>", desc = "Tmux sessionizer" },
+            { "<C-k>", desc = "Next quickfix item" },
+            { "<C-j>", desc = "Prev quickfix item" },
+            { "<C-s>", desc = "Save file" },
 
             -- Go error handling
             { "<leader>ee", desc = "if err != nil { return }" },
@@ -50,16 +66,61 @@ return {
             { "<leader>ef", desc = "if err != nil { log.Fatalf }" },
             { "<leader>el", desc = "if err != nil { logger.Error }" },
 
-            -- From telescope.lua (guessing based on common patterns)
+            -- From telescope.lua
             { "<leader>pf", desc = "Find files" },
             { "<leader>ps", desc = "Grep search" },
+            { "<leader>pt", desc = "Find tests" },
+            { "<C-p>", desc = "Find git files" },
+            { "<leader>pws", desc = "Grep word under cursor" },
+            { "<leader>pWs", desc = "Grep WORD under cursor" },
+            { "<leader>vh", desc = "Find help tags" },
+            { "<leader>gs", desc = "Git status" },
 
             -- From harpoon
             { "<leader>a", desc = "Harpoon add file" },
+            { "<leader>A", desc = "Harpoon prepend file" },
+            { "<C-e>", desc = "Harpoon quick menu" },
+            { "<C-h>", desc = "Harpoon file 1" },
+            { "<C-b>", desc = "Harpoon file 2" },
+            { "<C-n>", desc = "Harpoon file 3" },
+            { "<C-m>", desc = "Harpoon file 4" },
+            { "<leader><C-h>", desc = "Harpoon replace at 1" },
+            { "<leader><C-b>", desc = "Harpoon replace at 2" },
+            { "<leader><C-n>", desc = "Harpoon replace at 3" },
+            { "<leader><C-m>", desc = "Harpoon replace at 4" },
+
+            -- From LSP (init.lua)
+            { "gd", desc = "Go to definition" },
+            { "<leader>vws", desc = "Workspace symbol search" },
+            { "<leader>vd", desc = "Open diagnostic float" },
+            { "<leader>vca", desc = "Code action" },
+            { "<leader>vrr", desc = "Show references" },
+            { "<leader>vrn", desc = "Rename symbol" },
+            { "<C-h>", desc = "Signature help", mode = "i" },
+            { "[d", desc = "Next diagnostic" },
+            { "]d", desc = "Prev diagnostic" },
 
             -- From gitsigns (hunks)
             { "<leader>hp", desc = "Preview hunk" },
             { "<leader>hb", desc = "Blame line" },
+            { "]c", desc = "Next git hunk / class start" },
+            { "[c", desc = "Prev git hunk / class start" },
+
+            -- From nvim-tree
+            { "<C-S-e>", desc = "Toggle file tree" },
+            { "<leader>fe", desc = "Reveal file in tree" },
+
+            -- From flash.nvim
+            { "s", desc = "Flash jump" },
+            { "S", desc = "Flash treesitter" },
+            { "r", desc = "Flash remote", mode = "o" },
+            { "R", desc = "Flash treesitter search", mode = { "o", "x" } },
+
+            -- From undotree
+            { "<leader>u", desc = "Toggle undo tree" },
+
+            -- From hardtime
+            { "<leader>ht", desc = "Toggle Hardtime" },
 
             -- From Comment.nvim (g prefix, not leader)
             { "gc", group = "comment (line)" },
@@ -121,8 +182,6 @@ return {
             { "[m", desc = "Prev function start" },
             { "]M", desc = "Next function end" },
             { "[M", desc = "Prev function end" },
-            { "]c", desc = "Next class start" },
-            { "[c", desc = "Prev class start" },
             { "]C", desc = "Next class end" },
             { "[C", desc = "Prev class end" },
         })
