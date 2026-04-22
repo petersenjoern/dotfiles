@@ -6,6 +6,11 @@ return {
             git = {
                 ignore = false,
             },
+            filesystem_watchers = {
+                ignore_dirs = {
+                    ".worktrees",
+                },
+            },
         })
         vim.keymap.set("n", "<C-S-e>", ":NvimTreeToggle<CR>", { desc = "Toggle file tree" })
         vim.keymap.set("n", "<leader>fe", ":NvimTreeFindFile<CR>", { desc = "Reveal file in tree" })

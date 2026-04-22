@@ -195,6 +195,31 @@ Debugging in vim:
   - Integrates with nvim-cmp: selecting a function adds () automatically
   - <M-e> (Alt+e) for fast-wrap - wrap existing text with pairs
 
+  ┌─────┬─────────────────────────┬──────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │  #  │         Keymap          │         What it does         │                                                       Why it matters                                                       │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 1   │ <leader>vca             │ Code action                  │ Fixes imports, extracts functions, auto-implements interfaces — the single most powerful LSP shortcut.                     │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 2   │ <leader>vrn             │ Rename symbol                │ Project-wide safe rename. Beats find-and-replace every time.                                                               │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 3   │ <leader>ps              │ Grep search (Telescope)      │ Find any string across the entire project instantly. Your main "where is this used?" tool.                                 │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 4   │ <leader>db + <leader>dc │ Breakpoint + Continue        │ Actual debugging instead of print statements. Even occasional use saves huge time on complex bugs.                         │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 5   │ <leader>sr              │ Spectre search & replace     │ Multi-file search-and-replace with preview. Essential for refactors too small for LSP rename.                              │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 6   │ af / if                 │ Select around/inner function │ Combine with d, y, c — delete/yank/change entire functions. Composable power.                                              │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 7   │ <leader>o               │ Toggle test/impl file        │ One keystroke to flip between code and its test. Removes the biggest friction point in TDD flow.                           │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 8   │ <leader>vrr             │ Show references              │ "Who calls this?" — essential before refactoring or deleting anything. The complement to gd.                               │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 9   │ <leader>vd              │ Open diagnostic float        │ See the full error message inline without leaving your cursor. Faster than scanning the statusline or jumping to quickfix. │
+  ├─────┼─────────────────────────┼──────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 10  │ ]m / [m                 │ Next/prev function start     │ Jump function-by-function through a file. Best way to skim a file's structure without a sidebar.                           │
+  └─────┴─────────────────────────┴──────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
 
 ## Other
 :cq             - exit with error code

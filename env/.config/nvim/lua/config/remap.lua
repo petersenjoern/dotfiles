@@ -96,6 +96,13 @@ vim.keymap.set(
     "oif err != nil {<CR>}<Esc>O.logger.Error(\"error\", \"error\", err)<Esc>F.;i"
 )
 
+-- Copy absolute file path to system clipboard | Trigger: SPACE + c + p
+vim.keymap.set("n", "<leader>cp", function()
+    local path = vim.fn.expand("%:p")
+    vim.fn.setreg("+", path)
+    vim.notify("Copied: " .. path)
+end, { desc = "Copy file path" })
+
 -- Start cellular automaton "make it rain" animation | Trigger: SPACE + c + a
 vim.keymap.set("n", "<leader>ca", function()
     require("cellular-automaton").start_animation("make_it_rain")

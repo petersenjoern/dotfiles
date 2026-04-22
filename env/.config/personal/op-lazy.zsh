@@ -22,6 +22,8 @@ op_env() {
 }
 
 op_load() {
-  op_env ANTHROPIC_API_KEY "op://Personal/anthropic-api/credential"
+  op_env ANTHROPIC_API_KEY "op://Personal/anthropic-amass-api-local-jp/credential"
   op_env AWS_BEARER_TOKEN_BEDROCK "op://Work/aws-bedrock/credential"
+  op_env MODAL_TOKEN_ID "op://Work/modal-tagger-id/credential"
+  op_env MODAL_TOKEN_SECRET "op://Work/modal-tagger-secret/credential"
 }
