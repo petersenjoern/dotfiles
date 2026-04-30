@@ -22,7 +22,7 @@ return {
         -- Register all keymaps with descriptions
         wk.add({
             -- Groups
-            { "<leader>c", group = "copy/misc" },
+            { "<leader>c", group = "copy/cloak" },
             { "<leader>d", group = "debug" },
             { "<leader>t", group = "test" },
             { "<leader>p", group = "project" },
