@@ -114,7 +114,6 @@ update_files $DEV_ENV/claude/commands $HOME/.claude/commands
 # keybindings
 copy $DEV_ENV/key-mapping/input.conf $HOME/.config/hypr/
 copy $DEV_ENV/hypr/bindings.conf $HOME/.config/hypr/
-copy $DEV_ENV/hypr/tiling-v2.conf $HOME/.config/hypr/
 
 # monitors
 copy $DEV_ENV/hypr/monitors.conf $HOME/.config/hypr/
