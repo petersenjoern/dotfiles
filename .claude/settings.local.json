@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tmux list-panes:*)",
+      "Bash(tmux split-window:*)",
+      "Bash(tmux kill-window:*)",
+      "Bash(tmux list-windows:*)",
+      "WebFetch(domain:mouseless.click)"
+    ]
+  }
+}
