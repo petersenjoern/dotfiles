@@ -31,6 +31,7 @@ alias p="pasta"
 alias vi="$EDITOR"
 alias vim="$EDITOR"
 alias nvim="$EDITOR"
+alias gauth="gcloud auth application-default login"
 
 alias llmjq="llm jq"
 alias llmcmd="llm cmd"

@@ -5,7 +5,14 @@
       "Bash(tmux split-window:*)",
       "Bash(tmux kill-window:*)",
       "Bash(tmux list-windows:*)",
-      "WebFetch(domain:mouseless.click)"
+      "WebFetch(domain:mouseless.click)",
+      "Bash(mise which *)",
+      "Bash(mise where *)",
+      "Bash(hyprctl reload *)",
+      "Bash(hyprctl configerrors *)",
+      "Bash(hyprctl binds *)",
+      "Bash(hyprctl dispatch *)",
+      "Bash(hyprctl activewindow *)"
     ]
   }
 }

@@ -5,3 +5,7 @@ export DOTFILES_GIT_NAME="Your Name"
 export DOTFILES_REPOS_DIR="$HOME/repos"
 export DOTFILES_TODO_PATH="$HOME/repos/personal/TODO.md"
 export AWS_VAULT_FILE_PASSPHRASE=""
+
+# Tailnet domain (e.g. tail123abc.ts.net) — used in shell expansions like
+# `https://host.$REMOTE_TAILNET`. Find yours with `tailscale status --json | jq -r .MagicDNSSuffix`.
+export REMOTE_TAILNET=""

@@ -185,7 +185,9 @@ def sync_env_files(project_root: Path, wt_path: Path) -> None:
         rel_parts = p.relative_to(project_root).parts
         if any(part in skip_dirs for part in rel_parts):
             continue
-        if not p.is_file():
+        # Accept regular files and FIFOs (1Password's "env" feature exposes
+        # secrets via a named pipe its daemon populates on each open).
+        if not (p.is_file() or p.is_fifo()):
             continue
         env_files.append(p)
 
@@ -244,6 +246,31 @@ def auto_env_setup_commands(project_root: Path, wt_path: Path) -> list[str]:
         )
 
     return cmds
+
+
+# ── Container teardown ──────────────────────────────────────────────────────────
+
+
+def teardown_containers(wt_path: Path, wt_num: str, drop_volumes: bool) -> None:
+    """Stop the per-worktree postgres containers (ai, app).
+
+    Containers are isolated by compose project name (ai-wt-N / app-wt-N), so we
+    pass the matching *_COMPOSE_PROJECT var to avoid touching the main repo's
+    stack. mcp has no container of its own. Volumes are kept unless drop_volumes.
+    """
+    vol_flag = "-v" if drop_volumes else ""
+    for svc in ("ai", "app"):
+        svc_dir = wt_path / svc
+        if not (svc_dir / "docker-compose.yml").exists():
+            continue
+        proj = f"{svc}-wt-{wt_num}"
+        env_var = f"{svc.upper()}_COMPOSE_PROJECT"
+        run(
+            f"{env_var}={proj} docker compose down {vol_flag}",
+            cwd=str(svc_dir),
+            check=False,
+        )
+        print(f"  Stopped {proj}{' (volumes dropped)' if drop_volumes else ''}")
 
 
 # ── Branch selection ──────────────────────────────────────────────────────────
@@ -590,6 +617,10 @@ def cmd_remove(args: argparse.Namespace) -> None:
         print("  Cancelled.")
         return
 
+    # Stop per-worktree containers before the worktree dir (and its compose
+    # files) disappear. Keeps DB volumes unless --volumes was passed.
+    teardown_containers(wt_path, wt_num, args.volumes)
+
     # Remove window and worktree
     tmux(f"kill-window -t '{selected}'")
     force_flag = "--force" if args.force else ""
@@ -728,6 +759,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="Force removal even with uncommitted changes",
+    )
+    p_remove.add_argument(
+        "--volumes",
+        action="store_true",
+        help="Also drop the worktree's postgres volumes (default: keep DB data)",
     )
     p_remove.set_defaults(func=cmd_remove)
 

@@ -7,6 +7,8 @@ if [[ "$ENABLE_CORRECTION" == "true" ]]; then
   alias sudo='nocorrect sudo'
   alias su='nocorrect su'
   alias cdk='nocorrect cdk'
+  alias gcloud='nocorrect gcloud'
+  alias aws='nocorrect aws'
   setopt correct_all
 fi
 

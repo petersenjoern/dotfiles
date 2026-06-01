@@ -221,6 +221,15 @@ Debugging in vim:
 
 
 
+## nvim-tree
+R                   - refresh tree (cursor must be in nvim-tree buffer)
+:NvimTreeRefresh    - refresh tree from anywhere
+<leader>fe          - reveal current file in tree (also forces a refresh)
+C-S-e               - toggle tree
+
+Note: `.worktrees` is in `filesystem_watchers.ignore_dirs`, so files
+created there won't auto-appear — use `R` to refresh.
+
 ## Other
 :cq             - exit with error code
 :Ex!            - discard changes
@@ -290,3 +299,12 @@ symbex -x ./.venv -d . "*dang* --docs --typed
 symbex -x ./.venv -d . "*dang*" --docs --typed  >> repomix-output.xml
 symbex -x ./.venv -d . --docs --class -s
 symbex -x ./.venv -f ./hello.py --async -s --docs --typed
+
+# Tmux
+## Pane management
+Prefix is `C-b` by default.
+
+`{`             - swap current pane with previous pane
+`}`             - swap current pane with next pane
+`q`             - show pane indices (briefly)
+`swap-pane -s <src> -t <dst>` - swap arbitrary panes by index (run as `:swap-pane ...`)
