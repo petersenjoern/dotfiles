@@ -78,7 +78,7 @@ ENABLE_CORRECTION="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting python pip docker docker-compose)
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting python pip docker docker-compose correction)
 
 
 source $ZSH/oh-my-zsh.sh
@@ -167,6 +167,16 @@ function fcontent() {
 }
 
 
+# yazi: cd to last dir on quit (lowercase q); use Q to quit without cd
+function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+        builtin cd -- "$cwd"
+    fi
+    rm -f -- "$tmp"
+}
+
 
 # NVM
 export NVM_DIR="$HOME/.nvm"
@@ -203,6 +213,7 @@ awsyaml () {
         aws-vault export --format ini "$1" | sed -e "s/\[$1\]/\[default\]/g" | tee ~/.aws/credentials
 }
 
+
 # dont show user@computer in terminal
 export PS1="\W \$ "
 
@@ -222,3 +233,29 @@ eval "$(zoxide init zsh)"
 
 # Add LLM CLI command completion
 eval "$(llm cmdcomp --init zsh)"
+
+# Alt+T: fzf-pick a tailnet host, insert its short name at the cursor.
+# Works inside any command — `ssh `, `scp data/ joern@`, `curl https://`, etc.
+# Short name resolves via MagicDNS or the matching ssh-config Host alias.
+_ts_host_widget() {
+    if ! command -v tailscale >/dev/null || ! command -v fzf >/dev/null || ! command -v jq >/dev/null; then
+        zle -M "tailscale + fzf + jq required"
+        return
+    fi
+    local picked
+    picked=$(tailscale status --json \
+        | jq -r '
+            ([.Self] + [.Peer | to_entries[] | .value])
+            | .[]
+            | "\(.HostName)\t\(.TailscaleIPs[0])\t\(.OS)\t\(if .Online then "online" else "offline" end)"
+        ' \
+        | column -t -s $'\t' \
+        | fzf --height=40% --reverse --prompt='ts> ' \
+              --header='Tailscale hosts (Enter inserts short name)' \
+        | awk '{print $1}')
+    [ -n "$picked" ] || return
+    LBUFFER+="$picked"
+    zle redisplay
+}
+zle -N _ts_host_widget
+bindkey '^[t' _ts_host_widget

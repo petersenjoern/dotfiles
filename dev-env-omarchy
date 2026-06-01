@@ -62,6 +62,7 @@ update_files $DEV_ENV/env/.config/personal $XDG_CONFIG_HOME/personal
 update_files $DEV_ENV/env/.config/io.datasette.llm/ $XDG_CONFIG_HOME/io.datasette.llm
 update_files $DEV_ENV/env/.config/repomix/ $XDG_CONFIG_HOME/repomix
 update_files $DEV_ENV/env/.config/ghostty/ $XDG_CONFIG_HOME/ghostty
+update_files $DEV_ENV/yazi $XDG_CONFIG_HOME/yazi
 update_files $DEV_ENV/env/.local $HOME/.local/
 if [[ $dry_run == "0" ]]; then
     rm $HOME/.local/scripts/dev-env # this is not to be confused with dev-env-omarchy
@@ -77,8 +78,8 @@ copy $DEV_ENV/zsh/.zshrc $HOME/.zshrc
 copy $DEV_ENV/zsh/.zsh_profile $HOME/.zsh_profile
 copy $DEV_ENV/zsh/.p10k.zsh $HOME/.p10k.zsh
 copy $DEV_ENV/zsh/.inputrc $HOME/.inputrc
-mkdir -p "$HOME/.oh-my-zsh/plugins/correction"
-copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/plugins/correction/correction.zsh
+mkdir -p "$HOME/.oh-my-zsh/custom/plugins/correction"
+copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/custom/plugins/correction/correction.plugin.zsh
 
 # vscode
 copy $DEV_ENV/vscode/settings.json $HOME/.config/Code/User/settings.json

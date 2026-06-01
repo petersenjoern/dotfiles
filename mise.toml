@@ -5,6 +5,7 @@ jq = 'latest'
 node = "25"
 aws-cli = "latest"
 aws-vault = "latest"
+gcloud = "latest"
 "npm:aws-cdk" = "latest"
 bun = "latest"
 golang = "latest"

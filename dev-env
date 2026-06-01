@@ -72,8 +72,8 @@ copy $DEV_ENV/zsh/.zshrc $HOME/.zshrc
 copy $DEV_ENV/zsh/.zsh_profile $HOME/.zsh_profile
 copy $DEV_ENV/zsh/.p10k.zsh $HOME/.p10k.zsh
 copy $DEV_ENV/zsh/.inputrc $HOME/.inputrc
-mkdir -p "$HOME/.oh-my-zsh/plugins/correction"
-copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/plugins/correction/correction.zsh
+mkdir -p "$HOME/.oh-my-zsh/custom/plugins/correction"
+copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/custom/plugins/correction/correction.plugin.zsh
 
 ## vscode
 copy $DEV_ENV/vscode/settings.json $WIN_HOME/AppData/Roaming/Code/User/settings.json
