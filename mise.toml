@@ -11,6 +11,7 @@ bun = "latest"
 golang = "latest"
 
 [env]
+_.file = ['.env.1password']
 _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed']}
 DEV_ENV="{{env.HOME}}/repos/personal/dotfiles"
 

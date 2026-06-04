@@ -144,6 +144,47 @@ def check_sensitive_file_access(tool_name: str, tool_input: dict[str, str]) -> b
     return False
 
 
+def is_github_write_command(command: str) -> bool:
+    """
+    Detect outward-facing GitHub write/publish operations that must not run
+    without explicit user approval: posting PR/issue comments or reviews,
+    creating/merging/closing PRs, pushing commits, and any `gh api` call that
+    uses a write HTTP method or field flags (which make gh api default to POST).
+
+    Read-only operations are intentionally NOT matched: gh pr view/list/diff/
+    checks, gh api GET (no field flags), git status/log/fetch/diff, etc.
+    """
+    normalized = " ".join(command.lower().split())
+
+    # git push — include compound forms like `cd repo && git push`
+    if re.search(r"(^|[;&|]|\s)git\s+push(\s|$)", normalized):
+        return True
+
+    # gh pr / gh issue write subcommands
+    if re.search(
+        r"(^|[;&|]|\s)gh\s+(pr|issue)\s+"
+        r"(comment|create|review|merge|close|reopen|edit|ready|lock|unlock|delete)\b",
+        normalized,
+    ):
+        return True
+
+    # gh release write subcommands
+    if re.search(r"(^|[;&|]|\s)gh\s+release\s+(create|edit|delete|upload)\b", normalized):
+        return True
+
+    # gh api with a write method, or with field/input flags (which switch the
+    # default verb from GET to POST). An explicit GET method opts back out.
+    if re.search(r"(^|[;&|]|\s)gh\s+api\b", normalized):
+        has_write_method = re.search(r"(-x|--method)\s+(post|put|patch|delete)", normalized)
+        explicit_get = re.search(r"(-x|--method)\s+get", normalized)
+        # NB: the command is lowercased, so -F (raw field) is matched by -f here.
+        has_field_flag = re.search(r"(^|\s)(-f|--field|--raw-field|--input)(\s|=)", normalized)
+        if has_write_method or (has_field_flag and not explicit_get):
+            return True
+
+    return False
+
+
 def main():
     try:
         # Read JSON input from stdin
@@ -181,6 +222,20 @@ def main():
                 )
                 print(
                     "Environment variables may contain secrets and should not be accessed directly",
+                    file=sys.stderr,
+                )
+                sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
+
+            # Block outward-facing GitHub writes (posting/pushing) without approval
+            if is_github_write_command(command):
+                print(
+                    "BLOCKED: GitHub write/publish operation requires explicit user approval",
+                    file=sys.stderr,
+                )
+                print(
+                    "Posting PR/issue comments or reviews, creating/merging PRs, pushing "
+                    "commits, or gh api writes are outward-facing. Ask the user to approve "
+                    "before running this command.",
                     file=sys.stderr,
                 )
                 sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
