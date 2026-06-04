@@ -7,7 +7,19 @@ set mouse = no
 
 set main-view-date = custom
 set main-view-date-format = "%Y-%m-%d %H:%M"
+set main-view-id = yes
+set main-view-author = abbreviated
 
 bind generic g move-first-line
 bind generic G move-last-line
 bind generic y @sh -c "echo -n %(commit) | copy"
+
+
+# fuzzy search for a file and show only commits where it's changed
+bind main F <sh -c "tig $(git ls-files | fzf)"
+
+# fuzzy search and open a file using the current commit context
+bind generic P !sh -c "c=%(commit); : ${c:=HEAD}; f=$(git ls-tree -r --name-only $c | fzf) && [ -n \"$f\" ] && tig show $c:\"$f\""
+
+# Checkout current commit
+bind main C !?<git checkout %(commit)

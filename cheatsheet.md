@@ -245,6 +245,10 @@ tig tag-1.0..tag-2.0
 tig --since=1.month -n20 -- Documentation/
 tig --all --since=1.week -- Makefile
 
+## tig in a tmux popup (opens in the current pane's repo)
+`prefix + g`    - full tig (commit log) in a 90%x90% popup
+`prefix + G`    - tig status in a 90%x90% popup
+
 ## views
 m - Switch to main view.
 d - Switch to diff view.
