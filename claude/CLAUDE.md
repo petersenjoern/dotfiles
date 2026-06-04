@@ -1,10 +1,11 @@
 ## Environment
 
 Tools (node, bun, uv, python, npx, etc.) are managed by
-[mise](https://mise.jdx.dev). Add shims to PATH before running commands:
-```
-export PATH="$HOME/.local/share/mise/shims:$PATH"
-```
+[mise](https://mise.jdx.dev). mise is activated in the shell profile, so these
+tools are already on PATH in the Bash tool. Run them directly (e.g. `npm run
+test`, `uv run pytest`) — do NOT prepend `export PATH="$HOME/.local/share/mise/shims:$PATH"`
+to commands. Prepending it turns every command into a compound `export ... && cmd`
+that no longer matches permission allow-rules or auto-mode, causing needless prompts.
 
 ## Git
 

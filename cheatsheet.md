@@ -274,10 +274,25 @@ symbex -x ./.venv -d . --docs --class -s
 symbex -x ./.venv -f ./hello.py --async -s --docs --typed
 
 # Tmux
-## Pane management
-Prefix is `C-b` by default.
+Prefix is remapped to `C-a` (see `tmux/.tmux.conf`).
 
+## Pane management
 `{`             - swap current pane with previous pane
 `}`             - swap current pane with next pane
 `q`             - show pane indices (briefly)
 `swap-pane -s <src> -t <dst>` - swap arbitrary panes by index (run as `:swap-pane ...`)
+
+## Git worktrees (tmux-worktree)
+Each worktree is a `cc-wt-N` tmux window with a 5-pane dev layout
+(nvim / claude / shell / BE / FE). Windows are auto-tinted with a stable
+palette color (status-bar tab + pane borders) so you can tell them apart at
+a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
+
+`prefix + T`    - create a new worktree + window (fzf branch picker, ctrl-n = new branch)
+`prefix + t`    - overview of all worktree windows (status, unpushed, recyclable hints)
+`prefix + C-t`  - restore tmux windows for worktrees that lost their window
+`prefix + X`    - remove a worktree + window (safety checks; `--force`, `--volumes`)
+`prefix + C-x`  - recycle: reuse the window for a fresh branch off main (keeps services warm)
+
+`M-1`..`M-9`    - jump straight to window N
+`M-,` / `M-.`   - move current window left / right

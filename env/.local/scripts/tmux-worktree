@@ -26,6 +26,12 @@ def run(cmd: str, cwd: str | None = None, check: bool = True) -> str:
     return r.stdout.strip()
 
 
+def run_rc(cmd: str, cwd: str | None = None) -> tuple[int, str, str]:
+    """Run a shell command and return (returncode, stdout, stderr)."""
+    r = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd)
+    return r.returncode, r.stdout.strip(), r.stderr.strip()
+
+
 def tmux_split(
     target: str, wt_path: Path, *, horizontal: bool = False, percent: int
 ) -> str:
@@ -110,9 +116,13 @@ def manifest_write(project_root: Path, entries: list[dict]) -> None:
     path.write_text(json.dumps({"worktrees": entries}, indent=2) + "\n")
 
 
-def manifest_add(project_root: Path, window: str, branch: str, rel_path: str) -> None:
+def manifest_add(
+    project_root: Path, window: str, branch: str, rel_path: str, color: str
+) -> None:
     entries = manifest_read(project_root)
-    entries.append({"window": window, "branch": branch, "path": rel_path})
+    entries.append(
+        {"window": window, "branch": branch, "path": rel_path, "color": color}
+    )
     manifest_write(project_root, entries)
 
 
@@ -139,6 +149,40 @@ def next_wt_number() -> int:
         except ValueError:
             continue
     return max(nums, default=0) + 1
+
+
+# ── Window coloring ─────────────────────────────────────────────────────────────
+
+# Stable palette of visually distinct tmux colors. Worktree N is tinted with
+# COLOR_PALETTE[(N-1) % len(COLOR_PALETTE)], so the same worktree number always
+# gets the same color across restores/resurrect.
+COLOR_PALETTE = [
+    "colour203",  # red
+    "colour39",   # blue
+    "colour78",   # green
+    "colour170",  # magenta
+    "colour215",  # orange
+    "colour44",   # cyan
+    "colour222",  # yellow
+    "colour141",  # purple
+]
+
+
+def color_for_number(num: int) -> str:
+    """Return the stable palette color for a given worktree number."""
+    return COLOR_PALETTE[(num - 1) % len(COLOR_PALETTE)]
+
+
+def apply_window_color(window: str, color: str) -> None:
+    """Tint a worktree window: status-bar tab (via @wt_color) + pane borders.
+
+    The status-bar formats in .tmux.conf read the per-window @wt_color user
+    option; pane border styles are set directly as per-window overrides so the
+    whole frame signals which worktree you're in.
+    """
+    tmux(f"set-window-option -t '{window}' @wt_color '{color}'")
+    tmux(f"set-window-option -t '{window}' pane-active-border-style 'fg={color},bold'")
+    tmux(f"set-window-option -t '{window}' pane-border-style 'fg={color}'")
 
 
 # ── Worktree status ───────────────────────────────────────────────────────────
@@ -357,6 +401,25 @@ def select_branch(project_root: Path, branches: list[str]) -> tuple[str, str]:
         return ("cancel", "")
 
 
+def prompt_branch(project_root: Path) -> tuple[bool, str | None]:
+    """Interactive branch picker shared by create/recycle.
+
+    Returns (cancelled, branch). branch is None when the user wants an
+    auto-generated name (caller fills in the wt/N default).
+    """
+    branches = get_available_branches(project_root)
+    if branches:
+        action, selected = select_branch(project_root, branches)
+        if action == "cancel":
+            return (True, None)
+        if action == "select":
+            return (False, selected)
+    branch_input = input(
+        "Enter branch name (leave empty for auto-generated wt/N): "
+    ).strip()
+    return (False, branch_input or None)
+
+
 # ── Window layout ─────────────────────────────────────────────────────────────
 
 
@@ -441,27 +504,14 @@ def cmd_create(args: argparse.Namespace) -> None:
     if args.branch:
         branch = args.branch
     else:
-        branches = get_available_branches(project_root)
-        if branches:
-            action, selected = select_branch(project_root, branches)
-            if action == "cancel":
-                return
-            elif action == "select":
-                branch = selected
-            else:  # "new"
-                branch_input = input(
-                    "Enter branch name (leave empty for auto-generated wt/N): "
-                ).strip()
-                branch = branch_input or None
-        else:
-            branch_input = input(
-                "Enter branch name (leave empty for auto-generated wt/N): "
-            ).strip()
-            branch = branch_input or None
+        cancelled, branch = prompt_branch(project_root)
+        if cancelled:
+            return
 
     num = next_wt_number()
     wt_name = f"wt-{num}"
     window_name = f"cc-wt-{num}"
+    color = color_for_number(num)
     if branch is None:
         branch = f"wt/{num}"
 
@@ -498,6 +548,9 @@ def cmd_create(args: argparse.Namespace) -> None:
     # Create tmux window with dev layout
     panes = create_dev_layout(window_name, wt_path)
 
+    # Tint the window (status-bar tab + pane borders) for fast context switching
+    apply_window_color(window_name, color)
+
     # Run env setup in shell pane
     if not args.no_setup and "shell" in panes:
         for cmd in auto_env_setup_commands(project_root, wt_path):
@@ -510,7 +563,7 @@ def cmd_create(args: argparse.Namespace) -> None:
         tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
         tmux(f"select-pane -t '{panes['claude']}'")
 
-    manifest_add(project_root, window_name, branch, f".worktrees/{wt_name}")
+    manifest_add(project_root, window_name, branch, f".worktrees/{wt_name}", color)
     print(f"Window {window_name} ready.")
 
 
@@ -690,6 +743,12 @@ def cmd_restore(args: argparse.Namespace) -> None:
 
         panes = create_dev_layout(wt_window, full_path, detached=True)
 
+        # Re-apply the worktree tint (window options don't survive resurrect)
+        color = entry.get("color") or color_for_number(
+            int(wt_window.removeprefix("cc-wt-"))
+        )
+        apply_window_color(wt_window, color)
+
         if "shell" in panes:
             for cmd in auto_env_setup_commands(project_root, full_path):
                 tmux(f"send-keys -t '{panes['shell']}' '{cmd}' C-m")
@@ -707,6 +766,174 @@ def cmd_restore(args: argparse.Namespace) -> None:
         input("Press Enter to close...")
 
 
+def current_window_name() -> str:
+    return tmux("display-message -p '#{window_name}'")
+
+
+def find_layout_panes(window: str) -> dict[str, str]:
+    """Identify the nvim / claude panes by their grid position.
+
+    The dev layout puts nvim top-left and claude top-right, so within the
+    top row the leftmost pane is nvim and the rightmost is claude. This is
+    position-based so it survives across resurrect/restore (no stored IDs).
+    """
+    out = tmux(
+        f"list-panes -t '{window}' -F '#{{pane_id}} #{{pane_left}} #{{pane_top}}'"
+    )
+    panes: list[tuple[str, int, int]] = []
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) == 3:
+            panes.append((parts[0], int(parts[1]), int(parts[2])))
+    if not panes:
+        return {}
+    min_top = min(t for _, _, t in panes)
+    top_row = sorted((p for p in panes if p[2] == min_top), key=lambda p: p[1])
+    result = {"nvim": top_row[0][0]}
+    if len(top_row) > 1:
+        result["claude"] = top_row[-1][0]
+    return result
+
+
+def cmd_recycle(args: argparse.Namespace) -> None:
+    """Reuse an existing worktree window for a fresh branch off main.
+
+    Keeps the window, panes, and long-running services (BE/FE/docker) warm.
+    Only the nvim and claude panes are reset. Intended as the post-merge
+    replacement for `remove` so you don't tear down a working environment.
+    """
+    project_root = get_project_root()
+
+    # Target window: the current one if it's a worktree window, else fzf.
+    cur = current_window_name()
+    if cur.startswith("cc-wt-"):
+        window = cur
+    else:
+        windows = list_wt_windows()
+        if not windows:
+            print("No worktree windows found.")
+            input("Press Enter to close...")
+            return
+        if len(windows) == 1:
+            window = windows[0]
+        else:
+            try:
+                result = subprocess.run(
+                    [
+                        "fzf",
+                        "--header=Select worktree window to recycle",
+                        "--reverse",
+                    ],
+                    input="\n".join(windows),
+                    capture_output=True,
+                    text=True,
+                )
+            except FileNotFoundError:
+                sys.exit("Error: fzf not found")
+            window = result.stdout.strip()
+            if not window:
+                return
+
+    wt_num = window.removeprefix("cc-wt-")
+    wt_path = project_root / ".worktrees" / f"wt-{wt_num}"
+    if not wt_path.is_dir():
+        sys.exit(f"Worktree directory not found: {wt_path}")
+
+    old_branch = git("branch --show-current", cwd=str(wt_path)) or "unknown"
+
+    # Safety: never recycle a dirty worktree (would silently lose work).
+    if git("status --porcelain", cwd=str(wt_path)) and not args.force:
+        print(f"  ✗ {old_branch} has uncommitted changes.")
+        print("  Commit or stash first, or pass --force.")
+        input("  Press Enter to close...")
+        return
+
+    # Resolve main branch and refresh remote refs so we branch off latest.
+    main_branch = git("symbolic-ref refs/remotes/origin/HEAD", cwd=str(project_root))
+    main_branch = (
+        main_branch.removeprefix("refs/remotes/origin/") if main_branch else "main"
+    )
+    print("  Fetching origin…")
+    git("fetch origin --prune", cwd=str(project_root))
+    base = f"origin/{main_branch}"
+
+    # Pick the next branch.
+    if args.branch:
+        new_branch: str | None = args.branch
+    else:
+        cancelled, new_branch = prompt_branch(project_root)
+        if cancelled:
+            return
+    if new_branch is None:
+        new_branch = f"wt/{wt_num}"
+
+    # Remote selection (origin/foo -> local tracking branch foo).
+    remote_ref = None
+    if "/" in new_branch and git(
+        f"show-ref --verify refs/remotes/{new_branch}", cwd=str(project_root)
+    ):
+        remote_ref = new_branch
+        new_branch = new_branch.split("/", 1)[1]
+
+    if new_branch == old_branch:
+        print(f"  Already on {new_branch}; nothing to switch.")
+        input("  Press Enter to close...")
+        return
+
+    # Switch the worktree's branch in place (services keep running).
+    branch_exists = bool(
+        git(f"show-ref --verify refs/heads/{new_branch}", cwd=str(project_root))
+    )
+    if branch_exists:
+        rc, _, err = run_rc(f"git checkout '{new_branch}'", cwd=str(wt_path))
+    elif remote_ref:
+        rc, _, err = run_rc(
+            f"git checkout -b '{new_branch}' --track '{remote_ref}'",
+            cwd=str(wt_path),
+        )
+    else:
+        # --no-track: the new branch is *cut from* origin/main but must not
+        # *track* it. Without this, git's default autoSetupMerge sets
+        # origin/main as upstream, which breaks bare push/pull. With
+        # push.autoSetupRemote=true, the first `git push` creates and tracks
+        # origin/<branch> instead (the conventional default).
+        rc, _, err = run_rc(
+            f"git checkout -b '{new_branch}' --no-track '{base}'", cwd=str(wt_path)
+        )
+    if rc != 0:
+        sys.exit(f"  ✗ Failed to switch branch: {err}")
+    print(f"  {window}: {old_branch} → {new_branch}")
+
+    # Delete the just-merged branch if git agrees it's safe (-d, not -D).
+    if old_branch not in (new_branch, main_branch, "unknown"):
+        rc, _, _ = run_rc(f"git branch -d '{old_branch}'", cwd=str(project_root))
+        if rc == 0:
+            print(f"  Deleted merged branch {old_branch}")
+
+    # Re-sync env symlinks (the new branch may reference new .env paths).
+    sync_env_files(project_root, wt_path)
+
+    # Reset only nvim + claude; leave BE/FE/docker panes running.
+    panes = find_layout_panes(window)
+    for pid in panes.values():
+        tmux(f"respawn-pane -k -t '{pid}' -c '{wt_path}'")
+    time.sleep(0.5)
+    if "nvim" in panes:
+        tmux(f"send-keys -t '{panes['nvim']}' 'nvim .' C-m")
+    if "claude" in panes:
+        tmux(f"send-keys -t '{panes['claude']}' 'claude' C-m")
+        tmux(f"select-pane -t '{panes['claude']}'")
+
+    # Update manifest branch entry for resurrect/restore.
+    entries = manifest_read(project_root)
+    for e in entries:
+        if e["window"] == window:
+            e["branch"] = new_branch
+    manifest_write(project_root, entries)
+
+    print(f"  {window} recycled onto {new_branch}.")
+
+
 def cmd_overview(args: argparse.Namespace) -> None:
     project_root = get_project_root()
     wt_dir = project_root / ".worktrees"
@@ -721,6 +948,11 @@ def cmd_overview(args: argparse.Namespace) -> None:
         input("\n  Press Enter to close...")
         return
 
+    main_branch = git("symbolic-ref refs/remotes/origin/HEAD", cwd=str(project_root))
+    main_branch = (
+        main_branch.removeprefix("refs/remotes/origin/") if main_branch else "main"
+    )
+
     for window in windows:
         num = window.removeprefix("cc-wt-")
         wt_path = wt_dir / f"wt-{num}"
@@ -728,7 +960,19 @@ def cmd_overview(args: argparse.Namespace) -> None:
         if wt_path.is_dir():
             branch = git("branch --show-current", cwd=str(wt_path)) or "?"
             icon, status_msg = worktree_status(str(wt_path))
-            print(f"  {window:<12} {branch:<25} {icon} {status_msg}")
+            # Flag windows whose branch is already merged into main (uses the
+            # last-fetched origin ref, no network) so you know what to recycle.
+            hint = ""
+            if branch not in (main_branch, "?") and not git(
+                "status --porcelain", cwd=str(wt_path)
+            ):
+                rc, _, _ = run_rc(
+                    f"git diff 'origin/{main_branch}...{branch}' --quiet",
+                    cwd=str(wt_path),
+                )
+                if rc == 0:
+                    hint = "  ↺ recyclable"
+            print(f"  {window:<12} {branch:<25} {icon} {status_msg}{hint}")
         else:
             print(f"  {window:<12} {'(missing)':<25} ⚠ directory not found")
 
@@ -766,6 +1010,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also drop the worktree's postgres volumes (default: keep DB data)",
     )
     p_remove.set_defaults(func=cmd_remove)
+
+    # recycle
+    p_recycle = sub.add_parser(
+        "recycle",
+        help="Reuse a worktree window for a fresh branch (keeps services running)",
+    )
+    p_recycle.add_argument(
+        "-b", "--branch", help="Branch to switch to (default: fzf/prompt)"
+    )
+    p_recycle.add_argument(
+        "--force",
+        action="store_true",
+        help="Recycle even with uncommitted changes (loses them)",
+    )
+    p_recycle.set_defaults(func=cmd_recycle)
 
     # restore
     p_restore = sub.add_parser(

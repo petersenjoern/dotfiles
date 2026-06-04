@@ -13,6 +13,9 @@
     editor = vim
 [push]
     default = simple
+    # First push of a new branch auto-creates and tracks origin/<branch>,
+    # so bare `git push`/`git pull` operate on the branch's own remote.
+    autoSetupRemote = true
 [pull]
   rebase = true
 [filter "tabspace"]
