@@ -234,33 +234,6 @@ created there won't auto-appear — use `R` to refresh.
 :cq             - exit with error code
 :Ex!            - discard changes
 
-# LLM CLI
-## Generic
-cat <<EOF | llm <enter>
-write your content
-across lines, and end with:
-EOF
-
-
-## CMD
-llm cmd <your nlp query to command>
-
-or with chat:
-
-<your nlp query to command> and press `ALT + \`
-sed -i '' 's/search/replace/g' file.go # Now do it for all go files in the project
-
-## Template
-llm -t find 'find all go files that contain the phrase hello world'
-llm -t repomix 'include the file under claude/hooks/*.py'
-
-## Logs
-llm logs -c (current conversation)
-llm logs list -n 10 -s
-llm logs --cid <id for specific conversation> (llm logs --cid 01k971ymkrcy9hkbvg130v7vsv --json | jq | nvim)
-llm logs -x (extract first fenced code block)
-llm logs --xl (extract last fenced code block)
-
 # TIG (https://jonas.github.io/tig/doc/manual.html)
 tig <tab> (to easily select directories/filenames/commits)
 tig <filename>

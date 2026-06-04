@@ -231,9 +231,6 @@ eval "$(/usr/bin/mise activate zsh)"
 # Zoxide for cd navigation (instead of zsh z)
 eval "$(zoxide init zsh)"
 
-# Add LLM CLI command completion
-eval "$(llm cmdcomp --init zsh)"
-
 # Alt+T: fzf-pick a tailnet host, insert its short name at the cursor.
 # Works inside any command — `ssh `, `scp data/ joern@`, `curl https://`, etc.
 # Short name resolves via MagicDNS or the matching ssh-config Host alias.

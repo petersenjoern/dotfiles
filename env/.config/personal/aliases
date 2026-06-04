@@ -33,9 +33,6 @@ alias vim="$EDITOR"
 alias nvim="$EDITOR"
 alias gauth="gcloud auth application-default login"
 
-alias llmjq="llm jq"
-alias llmcmd="llm cmd"
-
 alias opr="op run --env-file=.env.tpl --"
 
 

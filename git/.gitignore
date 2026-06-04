@@ -58,9 +58,6 @@ repomix-output.xml
 **/.sesskey
 
 
-//llm cli
-**/io.datasette.llm/logs.db
-
 //notes
 notes.md
 todo.md
