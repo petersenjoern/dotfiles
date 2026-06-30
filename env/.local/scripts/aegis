@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# aegis — global entrypoint for the control CLI.
+#
+# Forwards every argument to the real `aegis` script living in the aegis repo,
+# so you can run `aegis <command>` from anywhere instead of `cd`-ing into the
+# repo and running `./aegis <command>`.
+#
+# The real script resolves its own location, so it works regardless of CWD.
+# Override the repo location with AEGIS_HOME if it lives somewhere else.
+set -euo pipefail
+
+AEGIS_HOME="${AEGIS_HOME:-$HOME/repos/personal/aegis}"
+AEGIS_BIN="$AEGIS_HOME/aegis"
+
+if [[ ! -x "$AEGIS_BIN" ]]; then
+  echo "aegis: no executable at $AEGIS_BIN" >&2
+  echo "aegis: clone the aegis repo to ~/repos/personal/aegis, or set AEGIS_HOME to its path" >&2
+  exit 1
+fi
+
+exec "$AEGIS_BIN" "$@"
