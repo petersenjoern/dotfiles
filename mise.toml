@@ -3,6 +3,7 @@ python = "3.13"
 uv = "latest"
 jq = 'latest'
 node = "25"
+pnpm = 'latest'
 aws-cli = "latest"
 aws-vault = "latest"
 gcloud = "latest"

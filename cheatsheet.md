@@ -2,6 +2,26 @@
 ## FZF (and aliases)
 find . -name "*.py" | ff
 
+# Git (aliases)
+`g` is aliased to `git` (see `env/.config/personal/aliases`); the rest live in `git/.gitconfig`.
+## Commit
+`g acm "msg"`   - stage everything (`add -A`) + `commit -m` in one step
+`g cm "msg"`    - commit -m
+`g cam "msg"`   - commit -am (tracked changes only)
+`g ca`          - commit --amend
+`g aca`         - add -A + commit --amend (edit message)
+`g acan`        - add -A + commit --amend --no-edit (keep message)
+## Conventional commits (auto-prepend the type)
+`g feat "msg"`  - commit "feat: msg"
+`g fix "msg"`   - commit "fix: msg"
+`g chore "msg"` - commit "chore: msg"
+`g ref "msg"`   - commit "refactor: msg"
+
+## aws-vault wrappers
+`v` is aliased to `aws-vault`; `vp`/`vd` wrap `exec ... --`.
+`vp <cmd>`      - aws-vault exec prod -- <cmd>   (e.g. `vp make invoke-task-step ...`)
+`vd <cmd>`      - aws-vault exec dev  -- <cmd>
+
 # Neovim Hotkeys
 ## Harpoon
 C-e             - overview of harpoon files

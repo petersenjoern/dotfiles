@@ -25,6 +25,9 @@ alias sudp="sudo"
 
 alias nsmi=nvidia-smi
 alias v=aws-vault
+# aws-vault exec wrappers: `vp make invoke-task-step ...` == `v exec prod -- make ...`
+vp() { aws-vault exec prod -- "$@"; }
+vd() { aws-vault exec dev -- "$@"; }
 alias cb="copy"
 alias c="copy"
 alias p="pasta"
