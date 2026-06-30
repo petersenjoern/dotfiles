@@ -23,10 +23,6 @@ return {
             ["j"] = { "n", "x" },
             ["k"] = { "n", "x" },
             ["l"] = { "n", "x" },
-            ["w"] = { "n", "x" },
-            ["W"] = { "n", "x" },
-            ["b"] = { "n", "x" },
-            ["B"] = { "n", "x" },
         },
         disabled_keys = {
             ["<Up>"]    = { "", "i", "c" },
@@ -35,22 +31,6 @@ return {
             ["<Right>"] = { "", "i", "c" },
         },
         hints = {
-            ["ww"] = {
-                message = function() return "Use f{char}/F{char} + ;/, for in-line navigation" end,
-                length = 2,
-            },
-            ["WW"] = {
-                message = function() return "Use f{char}/F{char} + ;/, for in-line navigation" end,
-                length = 2,
-            },
-            ["bb"] = {
-                message = function() return "Use F{char} backward; bi to insert at word start" end,
-                length = 2,
-            },
-            ["BB"] = {
-                message = function() return "Use F{char} backward; Bi to insert at WORD start" end,
-                length = 2,
-            },
             -- Two keys when one exists
             ["d%$"] = {
                 message = function() return "Use D instead of d$" end,

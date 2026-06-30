@@ -12,7 +12,15 @@
       "Bash(hyprctl configerrors *)",
       "Bash(hyprctl binds *)",
       "Bash(hyprctl dispatch *)",
-      "Bash(hyprctl activewindow *)"
+      "Bash(hyprctl activewindow *)",
+      "WebSearch",
+      "Bash(tmux -V)",
+      "Bash(col -b)",
+      "Read(//tmp/**)",
+      "Bash(tmux display-popup *)",
+      "Bash(tmux display-message *)",
+      "Bash(tmux source-file *)",
+      "Bash(tmux list-keys *)"
     ]
   }
 }

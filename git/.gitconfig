@@ -48,11 +48,18 @@ ap = !git add -p $(git status -s | cut -d' ' -f2- | fzf -m)
 s = status -s
 cm = commit -m
 cam = commit -am
+acm = !git add -A && git commit -m
+feat = "!git commit -m \"feat: $1\" #"
+chore = "!git commit -m \"chore: $1\" #"
+fix = "!git commit -m \"fix: $1\" #"
+ref = "!git commit -m \"refactor: $1\" #"
 co = checkout
 cop = "!git checkout $1 && git pull origin"
 undo = reset --soft HEAD^
 cob = checkout -b
 ca = commit --amend
+aca = !git add -A && git commit --amend
+acan = !git add -A && git commit --amend --no-edit
 c = commit
 ri = rebase --interactive
 rc = rebase --continue
@@ -82,6 +89,45 @@ most-recent-tag = "describe --tags --abbrev=0"
 branch-name = "!git rev-parse --abbrev-ref HEAD"
 rebase-master = !CURRENT=$(git branch-name) && git cop master && git co $CURRENT && git rebase master
 rebase-main = !CURRENT=$(git branch-name) && git cop main && git co $CURRENT && git rebase main
+# Check if the current branch has been merged into main/master.
+# Fetches the remote first, picks main or master (preferring main),
+# then reports whether HEAD is contained in that base branch.
+merged = "!f() { \
+  git fetch -q origin; \
+  for b in main master; do \
+    if git show-ref -q --verify refs/remotes/origin/$b; then base=origin/$b; break; fi; \
+  done; \
+  if [ -z \"$base\" ]; then echo 'No origin/main or origin/master found'; return 1; fi; \
+  cur=$(git branch-name); \
+  if git merge-base --is-ancestor HEAD \"$base\"; then \
+    echo \"✓ '$cur' is merged into $base\"; \
+  else \
+    echo \"✗ '$cur' is NOT merged into $base\"; \
+    ahead=$(git rev-list --count \"$base\"..HEAD); \
+    echo \"  $ahead commit(s) on '$cur' not in $base\"; \
+  fi; \
+}; f"
+# Safely prune local branches already merged into the default base.
+# Fetches + prunes the remote, auto-detects origin/main or origin/master
+# (preferring main), lists merged local branches — skipping any branch checked
+# out in a worktree (incl. the current branch) and main/master — then asks for
+# confirmation before deleting them with the safe `git branch -d`.
+prune-merged = "!f() { \
+  git fetch -q -p origin; \
+  base=; \
+  for b in main master; do \
+    if git show-ref -q --verify refs/remotes/origin/$b; then base=origin/$b; break; fi; \
+  done; \
+  if [ -z \"$base\" ]; then echo 'No origin/main or origin/master found'; return 1; fi; \
+  branches=$(git for-each-ref refs/heads/ --merged \"$base\" --format='%(refname:short) %(worktreepath)' | awk 'NF==1 {print $1}' | grep -vxE 'main|master'); \
+  if [ -z \"$branches\" ]; then echo \"Nothing to prune (base $base).\"; return 0; fi; \
+  n=$(printf '%s\\n' \"$branches\" | wc -l | tr -d ' '); \
+  echo \"Merged into $base — would delete $n branch(es):\"; \
+  printf '%s\\n' \"$branches\" | sed 's/^/  /'; \
+  printf 'Delete? [y/N] '; \
+  read ans; \
+  case \"$ans\" in [yY]*) printf '%s\\n' \"$branches\" | while IFS= read -r br; do git branch -d \"$br\"; done;; *) echo 'Aborted.';; esac; \
+}; f"
 fco = "!git checkout $(git branch --sort='-committerdate:iso8601' | fzf)"
 whoami = !git config user.name && git config user.email
 l = log --graph --pretty=format:'%C(45)%s%Creset %C(white)%an, %ar%Creset %C(240)%h%Creset'

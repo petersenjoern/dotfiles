@@ -23,8 +23,6 @@
       "Bash(uv sync:*)"
     ],
     "deny": [
-      "Bash(curl:*)",
-      "Bash(wget:*)",
       "Bash(rm:*)",
       "Bash(mv:*)",
       "Bash(cat:$*)",
