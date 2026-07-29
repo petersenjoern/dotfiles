@@ -125,7 +125,9 @@ copy $DEV_ENV/ssh/config $HOME/.ssh/config
 # tig
 copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
 
-#mouseless
+# pi
+mkdir -p $HOME/.pi
+update_files $DEV_ENV/pi $HOME/.pi
 copy $DEV_ENV/mouseless/config.yaml $HOME/.mouseless/configs/config.yaml
 
 #systemd
