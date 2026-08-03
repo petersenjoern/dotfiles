@@ -84,6 +84,10 @@ wip = for-each-ref --sort='committerdate:iso8601' --format=' %(color:yellow)%(co
 t = tag
 td = tag -d
 pr = "!gh pr create --fill"
+pr-co = "!gh pr list | fzf --prompt 'Checkout PR> ' --preview 'gh pr view {1}' | awk '{print $1}' | xargs -r gh pr checkout"
+pr-edit = "!f() { PR=$(gh pr list | fzf --prompt 'Edit PR> ' --preview 'gh pr view {1}' | awk '{print $1}'); [ -z \"$PR\" ] && exit 0; FILE=$(mktemp); gh pr view \"$PR\" --json title,body -q '.title + \"\\n\\n\" + .body' > \"$FILE\"; ${EDITOR:-vim} \"$FILE\"; TITLE=$(head -n 1 \"$FILE\"); BODY=$(tail -n +3 \"$FILE\"); gh pr edit \"$PR\" --title \"$TITLE\" --body \"$BODY\"; rm -f \"$FILE\"; }; f"
+pr-merge = "!gh pr list | fzf --prompt 'Merge PR> ' --preview 'gh pr view {1}' | awk '{print $1}' | xargs -r gh pr merge"
+pr-view = "!gh pr list | fzf --prompt 'View PR> ' --preview 'gh pr view {1}' | awk '{print $1}' | xargs -r gh pr view -w"
 sup = submodule update
 most-recent-tag = "describe --tags --abbrev=0"
 branch-name = "!git rev-parse --abbrev-ref HEAD"
