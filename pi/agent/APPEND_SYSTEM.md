@@ -22,8 +22,14 @@
   2. **Services**: Contain pure business logic. They must depend on interfaces, not concrete implementations.
   3. **Repositories**: Handle external data access (DBs, third-party APIs).
 - **Protocols for DI**: Use structural subtyping (`typing.Protocol`) to define interface contracts for Services to rely on. Inject concrete Repositories into Services at the Router level.
-- **Independent Testing**: Test each tier in complete isolation.
-- **Factories & Random Data**: When testing Services, inject mock repositories that return dynamically generated random data using factory patterns (e.g., polyfactory, Faker, or custom factories). Avoid static/hardcoded mock responses to expose edge cases.
+
+# Testing Strategy (Avoiding Mocks)
+- **Legacy Systems**: Respect the existing testing conventions of the repository you are working in. Do not refactor existing tests using `unittest.mock.patch` unless explicitly asked.
+- **New Code**: For new services, ban the use of `patch` and `MagicMock` where possible.
+- **Stateful Fakes**: For unit testing Services, prefer creating "Fake" implementations of your DI Protocols (e.g., `InMemoryUserRepository` using Python `dict`/`list` for state) rather than mocking return values. Inject these Fakes explicitly.
+- **Factories & Random Data**: Populate your Fakes dynamically using factory patterns (e.g., `polyfactory`, `Faker`) to avoid hardcoded static data and expose edge cases.
+- **Integration via Testcontainers**: When testing Repositories, prefer testing against real database engines using ephemeral Docker containers (e.g., `testcontainers-python`) instead of mocking the DB client.
+- **HTTP Cassettes**: For 3rd-party API clients, use record/replay tools (`vcrpy`, `respx`, or `pytest-httpx`) instead of mocking `httpx`/`requests`.
 
 # Error Handling
 - **Domain Exceptions**: Services and Repositories must raise custom Domain Exceptions (e.g., `UserNotFoundError`), NEVER framework-specific exceptions like FastAPI's `HTTPException`.
