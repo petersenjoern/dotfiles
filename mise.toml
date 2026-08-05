@@ -16,7 +16,7 @@ _.file = ['.env.1password']
 _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed']}
 DEV_ENV="{{env.HOME}}/repos/personal/dotfiles"
 
-OP_BIOMETRIC_UNLOCK_ENABLED = "true"
+OP_BIOMETRIC_UNLOCK_ENABLED = "false"
 SSH_AUTH_SOCK = "~/.1password/agent.sock"
 
 [tasks.install-deps]
