@@ -31,7 +31,8 @@ def main() -> None:
     if not pane:
         sys.exit(0)
 
-    STATUS_DIR.mkdir(exist_ok=True)
+    # /tmp is shared, so keep the directory to this user.
+    STATUS_DIR.mkdir(mode=0o700, exist_ok=True)
     (STATUS_DIR / pane).write_text(state)
 
 
