@@ -2,9 +2,12 @@
 """tmux-worktree: manage git worktrees as tmux windows for Claude Code.
 
 Keybindings (configured in .tmux.conf):
-    prefix+T  create a new worktree window
-    prefix+t  show overview of all worktree windows
-    prefix+X  remove a worktree window
+    prefix+T    create a new worktree window
+    prefix+t    show overview of all worktree windows
+    prefix+C-t  restore windows for worktrees that lost theirs
+    prefix+X    remove a worktree window
+    prefix+C-x  recycle a worktree window onto a fresh branch
+    prefix+C-l  reapply the dev layout to a window whose panes have drifted
 """
 
 import argparse
@@ -422,6 +425,69 @@ def prompt_branch(project_root: Path) -> tuple[bool, str | None]:
 
 # ── Window layout ─────────────────────────────────────────────────────────────
 
+# The dev layout is defined once, by the percentages handed to split-window.
+# create_dev_layout() builds a brand-new window from them; dev_layout_string()
+# reproduces the identical geometry for a window that already exists, so
+# `relayout` can repair a drifted window without touching its panes.
+SPLIT_MAIN_PCT = 50  # vertical divider: nvim | claude
+SPLIT_ROW_PCT = 30  # height of the shell / service row in both columns
+SPLIT_SERVICE_PCT = 50  # horizontal divider in the service row: be | fe
+
+# Pane roles in *layout-string order*, which is also the order tmux walks a
+# window's pane list when assigning panes to cells.
+LAYOUT_PANES = ("nvim", "shell", "claude", "be", "fe")
+
+
+def layout_checksum(layout: str) -> str:
+    """Reproduce tmux's layout_checksum(): 16-bit rotate-right, then add.
+
+    tmux rejects a layout string whose leading checksum doesn't match the body.
+    """
+    csum = 0
+    for ch in layout:
+        csum = ((csum >> 1) + ((csum & 1) << 15)) & 0xFFFF
+        csum = (csum + ord(ch)) & 0xFFFF
+    return f"{csum:04x}"
+
+
+def dev_layout_string(width: int, height: int, pane_ids: list[str]) -> str:
+    """Build the tmux layout string for the 5-pane dev layout at width x height.
+
+    Mirrors tmux's own split arithmetic (layout_split_pane): a `-p N` split
+    gives the *new* pane `size * N / 100` and leaves the original with
+    `(size - 1) - that`, the -1 being the divider line. Fed the same
+    percentages create_dev_layout() splits with, this reproduces a freshly
+    created window byte-for-byte.
+
+    pane_ids are the numeric parts of the five %IDs in LAYOUT_PANES order.
+    tmux ignores them when applying a layout — panes are assigned to cells in
+    window order — but a well-formed string carries them.
+    """
+    right_w = (width * SPLIT_MAIN_PCT) // 100
+    left_w = width - 1 - right_w
+    row_h = (height * SPLIT_ROW_PCT) // 100
+    top_h = height - 1 - row_h
+    fe_w = (right_w * SPLIT_SERVICE_PCT) // 100
+    be_w = right_w - 1 - fe_w
+
+    rx = left_w + 1  # x of the right column
+    ry = top_h + 1  # y of the bottom row
+    fx = rx + be_w + 1  # x of the fe pane
+    nvim, shell, claude, be, fe = pane_ids
+
+    body = (
+        f"{width}x{height},0,0{{"
+        f"{left_w}x{height},0,0["
+        f"{left_w}x{top_h},0,0,{nvim},"
+        f"{left_w}x{row_h},0,{ry},{shell}],"
+        f"{right_w}x{height},{rx},0["
+        f"{right_w}x{top_h},{rx},0,{claude},"
+        f"{right_w}x{row_h},{rx},{ry}{{"
+        f"{be_w}x{row_h},{rx},{ry},{be},"
+        f"{fe_w}x{row_h},{fx},{ry},{fe}}}]}}"
+    )
+    return f"{layout_checksum(body)},{body}"
+
 
 def create_dev_layout(
     window_name: str, wt_path: Path, *, detached: bool = False
@@ -452,15 +518,19 @@ def create_dev_layout(
     tmux(f"set-option -t '{window_name}' remain-on-exit on")
 
     # Split right → claude pane (full-height vertical border, left keeps 50%)
-    p["claude"] = tmux_split(p["nvim"], wt_path, horizontal=True, percent=50)
+    p["claude"] = tmux_split(
+        p["nvim"], wt_path, horizontal=True, percent=SPLIT_MAIN_PCT
+    )
     # Split nvim bottom → shell pane (30% of left column)
-    p["shell"] = tmux_split(p["nvim"], wt_path, percent=30)
+    p["shell"] = tmux_split(p["nvim"], wt_path, percent=SPLIT_ROW_PCT)
     # Split claude bottom → be pane (30% of right column)
     if p["claude"]:
-        p["be"] = tmux_split(p["claude"], wt_path, percent=30)
+        p["be"] = tmux_split(p["claude"], wt_path, percent=SPLIT_ROW_PCT)
     # Split be right → fe pane
     if p.get("be"):
-        p["fe"] = tmux_split(p["be"], wt_path, horizontal=True, percent=50)
+        p["fe"] = tmux_split(
+            p["be"], wt_path, horizontal=True, percent=SPLIT_SERVICE_PCT
+        )
 
     # Wait for shells to initialize, then check for dead panes
     time.sleep(1.5)
@@ -770,6 +840,35 @@ def current_window_name() -> str:
     return tmux("display-message -p '#{window_name}'")
 
 
+def select_wt_window(header: str) -> str | None:
+    """Resolve which worktree window to act on: the current one, else fzf.
+
+    Returns None when there is nothing to pick or the user cancelled.
+    """
+    cur = current_window_name()
+    if cur.startswith("cc-wt-"):
+        return cur
+
+    windows = list_wt_windows()
+    if not windows:
+        print("No worktree windows found.")
+        input("Press Enter to close...")
+        return None
+    if len(windows) == 1:
+        return windows[0]
+
+    try:
+        result = subprocess.run(
+            ["fzf", f"--header={header}", "--reverse"],
+            input="\n".join(windows),
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        sys.exit("Error: fzf not found")
+    return result.stdout.strip() or None
+
+
 def find_layout_panes(window: str) -> dict[str, str]:
     """Identify the nvim / claude panes by their grid position.
 
@@ -805,34 +904,9 @@ def cmd_recycle(args: argparse.Namespace) -> None:
     project_root = get_project_root()
 
     # Target window: the current one if it's a worktree window, else fzf.
-    cur = current_window_name()
-    if cur.startswith("cc-wt-"):
-        window = cur
-    else:
-        windows = list_wt_windows()
-        if not windows:
-            print("No worktree windows found.")
-            input("Press Enter to close...")
-            return
-        if len(windows) == 1:
-            window = windows[0]
-        else:
-            try:
-                result = subprocess.run(
-                    [
-                        "fzf",
-                        "--header=Select worktree window to recycle",
-                        "--reverse",
-                    ],
-                    input="\n".join(windows),
-                    capture_output=True,
-                    text=True,
-                )
-            except FileNotFoundError:
-                sys.exit("Error: fzf not found")
-            window = result.stdout.strip()
-            if not window:
-                return
+    window = select_wt_window("Select worktree window to recycle")
+    if not window:
+        return
 
     wt_num = window.removeprefix("cc-wt-")
     wt_path = project_root / ".worktrees" / f"wt-{wt_num}"
@@ -932,6 +1006,82 @@ def cmd_recycle(args: argparse.Namespace) -> None:
     manifest_write(project_root, entries)
 
     print(f"  {window} recycled onto {new_branch}.")
+
+
+def cmd_relayout(args: argparse.Namespace) -> None:
+    """Reapply the dev layout geometry to an existing worktree window.
+
+    Pure geometry: nothing is respawned, killed or reordered, so nvim buffers,
+    claude sessions and running dev servers all survive. Use it when a window's
+    panes have drifted out of shape (a stray split, a manual resize, a
+    resurrect that restored the panes but not the proportions).
+
+    Panes fill the layout in their current window order, which is what a
+    drifted window normally wants. If one lands in the wrong slot afterwards,
+    `tmux swap-pane -d -s %A -t %B` moves it without disturbing the geometry.
+    """
+    if args.all:
+        windows = list_wt_windows()
+        if not windows:
+            print("No worktree windows found.")
+            input("Press Enter to close...")
+            return
+    else:
+        window = args.window or select_wt_window("Select worktree window to relayout")
+        if not window:
+            return
+        windows = [window]
+
+    warned = False
+
+    for window in windows:
+        listing = tmux(
+            f"list-panes -t '{window}' -F '#{{pane_id}} #{{pane_current_command}}'"
+        )
+        panes: list[tuple[str, str]] = []
+        for line in listing.splitlines():
+            parts = line.split(None, 1)
+            if parts:
+                panes.append((parts[0], parts[1] if len(parts) > 1 else "?"))
+
+        if not panes:
+            print(f"  ✗ {window}: no such window — skipped")
+            warned = True
+            continue
+        if len(panes) != len(LAYOUT_PANES):
+            print(
+                f"  ✗ {window}: has {len(panes)} panes, "
+                f"the dev layout needs {len(LAYOUT_PANES)} — skipped"
+            )
+            print("      Close the extras (prefix+x) or add one, then retry.")
+            warned = True
+            continue
+
+        size = tmux(
+            f"display-message -p -t '{window}' '#{{window_width}}x#{{window_height}}'"
+        )
+        try:
+            width, height = (int(n) for n in size.split("x"))
+        except ValueError:
+            print(f"  ✗ {window}: could not read window size ({size!r}) — skipped")
+            warned = True
+            continue
+
+        before = tmux(f"display-message -p -t '{window}' '#{{window_layout}}'")
+        ids = [pid.lstrip("%") for pid, _ in panes]
+        tmux(f"select-layout -t '{window}' '{dev_layout_string(width, height, ids)}'")
+        after = tmux(f"display-message -p -t '{window}' '#{{window_layout}}'")
+
+        if after == before:
+            print(f"  ✓ {window}: already correct ({width}x{height})")
+            continue
+
+        print(f"  ✓ {window}: layout restored ({width}x{height})")
+        for slot, (pid, cmd) in zip(LAYOUT_PANES, panes):
+            print(f"      {slot:<7} {pid:<5} {cmd}")
+
+    if warned or not args.all:
+        input("\n  Press Enter to close...")
 
 
 def cmd_overview(args: argparse.Namespace) -> None:
@@ -1036,6 +1186,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Restore all without fzf (for non-interactive use)",
     )
     p_restore.set_defaults(func=cmd_restore)
+
+    # relayout
+    p_relayout = sub.add_parser(
+        "relayout",
+        help="Reapply the dev layout geometry to a window whose panes drifted",
+    )
+    p_relayout.add_argument(
+        "-w", "--window", help="Window name (default: current, else fzf)"
+    )
+    p_relayout.add_argument(
+        "--all", action="store_true", help="Relayout every cc-wt-* window"
+    )
+    p_relayout.set_defaults(func=cmd_relayout)
 
     # overview
     p_overview = sub.add_parser("overview", help="Show status of all active worktrees")
