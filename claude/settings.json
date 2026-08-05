@@ -25,14 +25,17 @@
     "deny": [
       "Bash(rm:*)",
       "Bash(mv:*)",
-      "Bash(cat:$*)",
+      "Bash(cat:*)",
       "Read(./.env)",
-      "Read(./.env.*)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
       "Read(~/secrets.sh)",
-      "Read(~/.zshrc)",
-      "Bash(git push*)"
-    ]
+      "Read(~/.zshrc)"
+    ],
+    "defaultMode": "auto"
   },
+  "outputStyle": "default",
+  "effortLevel": "high",
   "attribution": {
     "commit": "",
     "pr": ""
@@ -42,7 +45,7 @@
     "OTEL_METRICS_EXPORTER": "otlp"
   },
   "enabledPlugins": {
-    "pr-review-toolkit@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": false,
     "superpowers@superpowers-marketplace": true
   },
   "statusLine": {
@@ -90,15 +93,6 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '\"\\(.tool_input.command) - \\(.tool_input.description // \"No description\")\"' >> ~/.claude/bash-command-log.txt"
-          }
-        ]
-      },
-      {
         "matcher": "",
         "hooks": [
           {
@@ -110,25 +104,16 @@
             "command": "uv run ~/.claude/hooks/status_hook.py working"
           }
         ]
-      },
-      {
-        "matcher": "Edit:*.py|Write:*.py|Edit:*.ts|Edit:*.tsx",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "make lint || exit 2",
-            "timeout": 20
-          }
-        ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit:*.py|Write:*.py",
+        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "pyright --outputjson ${file} 2>/dev/null | head -20"
+            "command": "uv run ~/.claude/hooks/post_tool_use.py",
+            "timeout": 60
           }
         ]
       }
@@ -143,6 +128,22 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -n \"$TMUX_PANE\" && rm -f \"/tmp/claude-status/$TMUX_PANE\"; true"
+          }
+        ]
+      }
     ]
+  },
+  "skillOverrides": {
+    "doubt": "off",
+    "failmodes": "off",
+    "unsaid": "off"
   }
 }
