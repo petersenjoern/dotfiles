@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Aggregate pi agent state for a tmux window and output a status icon.
+
+Called by tmux's #() format expansion:
+    #(tmux-pi-indicator #{session_name}:#{window_index})
+
+Reads per-pane state files from /tmp/pi-agent-status/ and returns the
+worst-case icon across all panes in the given window.
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+STATUS_DIR = Path("/tmp/pi-agent-status")
+PRIORITY = {"attention": 3, "working": 2, "idle": 1}
+ICONS = {"attention": " \u26a0", "working": " \u23f3", "idle": " \u2713"}
+
+
+def get_pane_ids(window_target: str) -> list[str]:
+    result = subprocess.run(
+        ["tmux", "list-panes", "-t", window_target, "-F", "#{pane_id}"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+    return [p for p in result.stdout.strip().splitlines() if p]
+
+
+def worst_state(pane_ids: list[str]) -> str:
+    worst = ""
+    worst_pri = 0
+    for pane_id in pane_ids:
+        state_file = STATUS_DIR / pane_id
+        if not state_file.is_file():
+            continue
+        state = state_file.read_text().strip()
+        pri = PRIORITY.get(state, 0)
+        if pri > worst_pri:
+            worst_pri = pri
+            worst = state
+            if state == "attention":
+                break
+    return worst
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        return
+
+    pane_ids = get_pane_ids(sys.argv[1])
+    state = worst_state(pane_ids)
+    if state in ICONS:
+        print(ICONS[state], end="")
+
+
+if __name__ == "__main__":
+    main()
