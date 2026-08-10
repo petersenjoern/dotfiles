@@ -110,6 +110,8 @@ copy $DEV_ENV/claude/settings.json $HOME/.claude/settings.json
 copy $DEV_ENV/claude/statusline-command.sh $HOME/.claude/statusline-command.sh
 update_files $DEV_ENV/claude/hooks $HOME/.claude/hooks
 update_files $DEV_ENV/claude/commands $HOME/.claude/commands
+mkdir -p $HOME/.claude/skills
+update_files $DEV_ENV/claude/skills $HOME/.claude/skills
 
 # keybindings
 copy $DEV_ENV/key-mapping/input.conf $HOME/.config/hypr/
