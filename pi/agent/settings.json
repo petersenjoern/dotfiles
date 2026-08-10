@@ -1,0 +1,22 @@
+{
+  "defaultModel": "coding",
+  "defaultProvider": "aegis",
+  "lastChangelogVersion": "0.84.1",
+  "packages": [
+    "npm:pi-subagents",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@juicesharp/rpiv-todo",
+    "npm:@juicesharp/rpiv-web-tools",
+    "npm:@narumitw/pi-firecrawl"
+  ],
+  "theme": "dark",
+  "defaultThinkingLevel": "high",
+  "enabledModels": [
+    "openrouter/deepseek/deepseek-v4-pro",
+    "openrouter/deepseek/deepseek-v4-flash",
+    "openrouter/z-ai/glm-5.2",
+    "aegis/coding",
+    "aegis/fast",
+    "openrouter/moonshotai/kimi-k3"
+  ]
+}
