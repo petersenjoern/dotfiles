@@ -17,6 +17,7 @@
     "openrouter/z-ai/glm-5.2",
     "aegis/coding",
     "aegis/fast",
-    "openrouter/moonshotai/kimi-k3"
+    "openrouter/moonshotai/kimi-k3",
+    "ollama/gemma4:latest"
   ]
 }
