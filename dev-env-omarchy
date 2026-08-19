@@ -113,12 +113,11 @@ update_files $DEV_ENV/claude/commands $HOME/.claude/commands
 mkdir -p $HOME/.claude/skills
 update_files $DEV_ENV/claude/skills $HOME/.claude/skills
 
-# keybindings
-copy $DEV_ENV/key-mapping/input.conf $HOME/.config/hypr/
-copy $DEV_ENV/hypr/bindings.conf $HOME/.config/hypr/
-
-# monitors
-copy $DEV_ENV/hypr/monitors.conf $HOME/.config/hypr/
+# hyprland (Omarchy 4 Lua configs; hyprland.lua/autostart.lua stay Omarchy-managed)
+copy $DEV_ENV/key-mapping/input.lua $HOME/.config/hypr/input.lua
+copy $DEV_ENV/hypr/bindings.lua $HOME/.config/hypr/bindings.lua
+copy $DEV_ENV/hypr/monitors.lua $HOME/.config/hypr/monitors.lua
+copy $DEV_ENV/hypr/looknfeel.lua $HOME/.config/hypr/looknfeel.lua
 
 # ssh
 mkdir -p $HOME/.ssh
