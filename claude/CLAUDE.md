@@ -29,6 +29,17 @@ change that solves the problem. Do not refactor surrounding code unless asked.
 consistency. Check that all references to renamed/removed functions, fields, or
 types are updated across the entire codebase.
 
+## Comments
+
+- Write the shortest comment that carries the information. One line is the
+  default; more than that needs a reason.
+- Explain why, not what. Delete any comment that restates the code.
+- No section banners, no docstring that repeats the signature, no "Note that
+  ...", no closing summary line.
+- When a change adds or rewrites more than a couple of comments or docstrings,
+  run the `no-ai-slop` skill over that comment text and apply its edits — the
+  same slop patterns show up in comments as in prose.
+
 ## Python Style
 
 - Use modern type syntax: lowercase `dict`, `list`, `tuple` instead of `typing.Dict`, `typing.List`, `typing.Tuple`.
