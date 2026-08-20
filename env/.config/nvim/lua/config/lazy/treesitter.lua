@@ -109,6 +109,15 @@ return {
                 ["[c"] = { query = "@class.outer", func = ts_move.goto_previous_start },
                 ["[M"] = { query = "@function.outer", func = ts_move.goto_previous_end },
                 ["[C"] = { query = "@class.outer", func = ts_move.goto_previous_end },
+                -- Shadows rarely-used builtins: ]a arglist, ]i include-search, ]/ C-comment.
+                ["]a"] = { query = "@parameter.inner", func = ts_move.goto_next_start },
+                ["[a"] = { query = "@parameter.inner", func = ts_move.goto_previous_start },
+                ["]i"] = { query = "@conditional.outer", func = ts_move.goto_next_start },
+                ["[i"] = { query = "@conditional.outer", func = ts_move.goto_previous_start },
+                ["]o"] = { query = "@loop.outer", func = ts_move.goto_next_start },
+                ["[o"] = { query = "@loop.outer", func = ts_move.goto_previous_start },
+                ["]/"] = { query = "@comment.outer", func = ts_move.goto_next_start },
+                ["[/"] = { query = "@comment.outer", func = ts_move.goto_previous_start },
             }
 
             for key, opts in pairs(move_maps) do

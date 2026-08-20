@@ -97,8 +97,8 @@ return {
             { "<leader>vrr", desc = "Show references" },
             { "<leader>vrn", desc = "Rename symbol" },
             { "<C-h>", desc = "Signature help", mode = "i" },
-            { "[d", desc = "Next diagnostic" },
-            { "]d", desc = "Prev diagnostic" },
+            { "]d", desc = "Next diagnostic" },
+            { "[d", desc = "Prev diagnostic" },
 
             -- From gitsigns (hunks)
             { "<leader>hp", desc = "Preview hunk" },
@@ -184,6 +184,14 @@ return {
             { "[M", desc = "Prev function end" },
             { "]C", desc = "Next class end" },
             { "[C", desc = "Prev class end" },
+            { "]a", desc = "Next parameter" },
+            { "[a", desc = "Prev parameter" },
+            { "]i", desc = "Next conditional" },
+            { "[i", desc = "Prev conditional" },
+            { "]o", desc = "Next loop" },
+            { "[o", desc = "Prev loop" },
+            { "]/", desc = "Next comment" },
+            { "[/", desc = "Prev comment" },
         })
     end,
 }
