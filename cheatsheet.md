@@ -121,23 +121,70 @@ C-p and C-pf    - find files
   │ Ctrl+s │ c       │ Toggle flash in search mode     │
   └────────┴─────────┴─────────────────────────────────┘
 
-  ┌─────────┬────────────────────────────────────────┐
-  │ Keybind │                 Action                 │
-  ├─────────┼────────────────────────────────────────┤
-  │ ]d      │ Go to next diagnostic                  │
-  ├─────────┼────────────────────────────────────────┤
-  │ [d      │ Go to previous diagnostic              │
-  ├─────────┼────────────────────────────────────────┤
-  │ ]e      │ Go to next error (skips warnings)      │
-  ├─────────┼────────────────────────────────────────┤
-  │ [e      │ Go to previous error                   │
-  ├─────────┼────────────────────────────────────────┤
-  │ ]w      │ Go to next warning                     │
-  ├─────────┼────────────────────────────────────────┤
-  │ [w      │ Go to previous warning                 │
-  ├─────────┼────────────────────────────────────────┤
-  │ <C-W>d  │ Open diagnostic float for current line │
-  └─────────┴────────────────────────────────────────┘
+## Bracket motions `[` / `]`
+Mnemonic: `]` always goes forward, `[` always goes backward. Uppercase = the
+*end* of the node instead of its start. All of these take a count (`3]m`), and
+the treesitter ones work in operator-pending mode too (`d]m`, `y[c`).
+
+### Learn these by heart
+  ┌───────────┬──────────────────────────────────────────────────────────────┐
+  │    Key    │                            Action                            │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ [{ / ]}   │ Jump to the *unmatched* enclosing brace. Repeat to climb out  │
+  │           │ of nested blocks. `[(` / `])` for parens. Works as an         │
+  │           │ operator target: `d[{`, `v]}`.                                │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]m / [m   │ Next / prev function start (treesitter). Best way to skim a   │
+  │           │ file's structure. `]M` / `[M` for function *end*.             │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]c / [c   │ Next / prev git hunk. Falls through to class start when the   │
+  │           │ buffer has no changes. `]C` / `[C` for class end.             │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]d / [d   │ Next / prev diagnostic (opens the float on arrival).          │
+  │           │ `<C-W>d` shows the diagnostic under the cursor without moving.│
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]q / [q   │ Next / prev quickfix entry (nvim default). `]Q` / `[Q` for    │
+  │           │ first / last. Anything that fills quickfix — Spectre, :grep,  │
+  │           │ vim-test failures, LSP references — becomes bracket-navigable.│
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]p / [p   │ Paste re-indented to match the current line. Not a motion,    │
+  │           │ but the bracket command you will use most.                    │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]s / [s   │ Next / prev misspelled word (needs `:set spell`). Pair with   │
+  │           │ `z=` to correct and `zg` to add to the dictionary.            │
+  └───────────┴──────────────────────────────────────────────────────────────┘
+
+### Treesitter moves (nvim-treesitter-textobjects)
+  ┌─────────┬────────────────────┬──────────────────────────────────────────┐
+  │   Key   │       Target       │                 Textobject               │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]m / [m │ function start     │ `af` / `if` to select                    │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]M / [M │ function end       │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]c / [c │ class start        │ `ac` / `ic` to select                    │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]C / [C │ class end          │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]a / [a │ parameter          │ `aa` / `ia` to select                    │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]i / [i │ conditional (if)   │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]o / [o │ loop               │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]/ / [/ │ comment            │                                          │
+  └─────────┴────────────────────┴──────────────────────────────────────────┘
+
+### Other built-ins worth knowing
+`]z` / `[z`     - end / start of the current open fold
+`` ]` `` / `` [` ``  - next / prev lowercase mark (`]'` / `['` for linewise)
+`]]` / `[[`     - next / prev section; fallback for files with no TS parser
+`[I`            - list every line containing the word under the cursor
+                  (`[<C-i>` jumps to the first one) — grep without leaving the buffer
+`]b` / `[b`     - next / prev buffer (nvim default; also `]B` / `[B` for first / last)
+`]l` / `[l`     - location list (nvim default; you also have `<leader>k` / `<leader>j`)
+`]<Space>`      - insert a blank line below without leaving normal mode (`[<Space>` above)
+
 
   Your config has these quickfix keymaps in remap.lua:56-62:
   - <C-k> - next quickfix item
