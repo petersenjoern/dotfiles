@@ -84,9 +84,6 @@ copy $DEV_ENV/zsh/correction.zsh $HOME/.oh-my-zsh/custom/plugins/correction/corr
 copy $DEV_ENV/vscode/settings.json $HOME/.config/Code/User/settings.json
 copy $DEV_ENV/vscode/keybindings.json $HOME/.config/Code/User/keybindings.json
 
-# alacritty
-copy $DEV_ENV/alacritty/alacritty-omarchy.toml $HOME/.config/alacritty/alacritty.toml
-
 # fzf
 mkdir -p $HOME/.local/share/fzf
 copy $DEV_ENV/fzf/key-bindings.zsh $HOME/.local/share/fzf/key-bindings.zsh

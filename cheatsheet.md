@@ -336,14 +336,6 @@ c - Switch to stage view
 rg "hello" --type py
 rg -l "hello" --type py | ffm
 
-# Symbex
-## Often used
-symbex -x ./.venv -d . -s --docs --typed
-symbex -x ./.venv -d . "*dang* --docs --typed
-symbex -x ./.venv -d . "*dang*" --docs --typed  >> repomix-output.xml
-symbex -x ./.venv -d . --docs --class -s
-symbex -x ./.venv -f ./hello.py --async -s --docs --typed
-
 # Tmux
 Prefix is remapped to `C-a` (see `tmux/.tmux.conf`).
 
