@@ -63,7 +63,7 @@ if command -v chromium &> /dev/null; then
   chromium "$URL"
   echo "Opened: $URL in Chromium"
 else
-  xgd-open "$URL"
+  xdg-open "$URL"
 fi
 
 

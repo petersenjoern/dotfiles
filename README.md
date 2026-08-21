@@ -20,9 +20,8 @@ My goal is to maintain a consistent and productive environment across my machine
 * **Mise**: global and project specific tool, env and task automation setup
 
 ### AI tooling
-* **Claude Code**: custom agents, slash commands, hooks and settings for AI-assisted development
-* **LLM**: CLI for adhoc usage of LLMs in the terminal, with templates for code, refactor, planning, etc.
-* **LiteLLM**: proxy configuration for routing LLM requests
+* **Claude Code**: slash commands, hooks, skills and settings for AI-assisted development
+* **Pi**: agent config and custom extensions
 
 ### Desktop & window management
 * **Hyprland**: tiling compositor bindings and monitor setup
@@ -38,7 +37,7 @@ My goal is to maintain a consistent and productive environment across my machine
 ### Scripts & tools
 * `dev-env` / `dev-env-omarchy`: Scripts to purge old and copy new dotfiles into respective directories
 * `tmux-sessionizer`: project session launcher with git worktree support
-* Utility scripts: `timer`, `myip`, `copy-pwd`, `browser-search`
+* Utility scripts: `timer`, `myip`, `cpwd`, `browser`
 * **Other tools**: `fzf`, `bat`, `fd`, `ripgrep`
 * **Cheatsheet**: quick reference for hotkeys and shortcuts (`cheatsheet.md`)
 
@@ -100,7 +99,6 @@ Copy `dotfiles.local.conf.example` and fill in your values. Everything else deri
 | `DOTFILES_REPOS_DIR` | Root directory for all repos | `$HOME/repos` |
 | `DOTFILES_TODO_PATH` | Path to your TODO.md | `$HOME/repos/personal/TODO.md` |
 | `AWS_VAULT_FILE_PASSPHRASE` | aws-vault file backend passphrase | — |
-| `DOTFILES_TMUX_SESSION` | Default tmux session name (used by `send_to_tmux.sh`) | `dev` |
 
 
 ### Shell History Sync (Atuin)
