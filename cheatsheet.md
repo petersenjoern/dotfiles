@@ -297,6 +297,32 @@ C-S-e               - toggle tree
 Note: `.worktrees` is in `filesystem_watchers.ignore_dirs`, so files
 created there won't auto-appear — use `R` to refresh.
 
+### Resizing (cursor must be in the tree)
+C-Right             - widen by 5 columns
+C-Left              - narrow by 5 columns
+<leader>r           - reset to the configured width (35)
+:NvimTreeResize 50  - jump to an absolute width (`+10` / `-10` also work)
+
+Default width and `preserve_window_proportions` live in
+`env/.config/nvim/lua/config/lazy/nvim-tree.lua`. Without the latter, opening a
+file equalizes every window and the tree snaps back to its old size.
+
+### Creating files and folders
+`a` prompts with the containing directory pre-filled — the folder under the
+cursor, or the parent of the file under the cursor. What you type after it
+decides what gets made:
+  foo.lua             - a file
+  foo/                - a folder (trailing slash is the whole difference)
+  a/b/c.lua           - c.lua plus every missing folder on the way
+The new node is revealed in the tree afterwards, so you land on it.
+
+### Other file ops
+r / e / u           - rename (full name / basename only / full path)
+d / D               - delete / trash
+c / x / p           - copy / cut / paste into the folder under the cursor
+y / Y / gy          - yank filename / relative path / absolute path
+g?                  - full mapping list for the tree buffer
+
 ## Other
 :cq             - exit with error code
 :Ex!            - discard changes
@@ -312,9 +338,11 @@ tig tag-1.0..tag-2.0
 tig --since=1.month -n20 -- Documentation/
 tig --all --since=1.week -- Makefile
 
-## tig in a tmux popup (opens in the current pane's repo)
-`prefix + g`    - full tig (commit log) in a 90%x90% popup
-`prefix + G`    - tig status in a 90%x90% popup
+## tig from tmux (opens in the current pane's repo)
+`prefix + g`    - full tig (commit log) in a `tig-<repo>` window; again from
+                  inside it jumps back to the previous window
+`prefix + G`    - same, but tig status
+`prefix + C-g`  - throwaway tig popup (modal: M-<n> is dead until you quit)
 
 ## views
 m - Switch to main view.
