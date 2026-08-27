@@ -32,7 +32,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 const CLAUDE_HOOKS_DIR = join(homedir(), ".claude", "hooks");
 
@@ -80,10 +80,12 @@ async function runHook(
 	payload: Record<string, unknown>,
 	timeoutMs: number,
 	failOpenVerdict: Verdict,
+	onFailOpen?: (detail: string) => void,
 ): Promise<Verdict> {
 	const stdin = JSON.stringify(payload);
 	let stdout = "";
 	let stderr = "";
+	let spawnError = "";
 	let exitCode = 0;
 	let timedOut = false;
 
@@ -99,8 +101,10 @@ async function runHook(
 
 		child.stdout.on("data", (d: Buffer) => (stdout += d.toString()));
 		child.stderr.on("data", (d: Buffer) => (stderr += d.toString()));
-		child.on("error", () => {
+		// e.g. `uv` not on PATH / not resolvable → the hook never runs at all.
+		child.on("error", (err: Error) => {
 			clearTimeout(timer);
+			spawnError = err.message;
 			resolve();
 		});
 		child.on("close", (code) => {
@@ -109,11 +113,25 @@ async function runHook(
 			resolve();
 		});
 
+		// A failed spawn makes stdin unwritable; swallow the EPIPE so it doesn't
+		// surface as an unhandled 'error' event.
+		child.stdin.on("error", () => {});
 		child.stdin.end(stdin);
 	});
 
+	// The hook binary couldn't be launched — treat like any other hook failure:
+	// fail open, but surface it so the gate isn't silently off.
+	if (spawnError) {
+		const detail = `${scriptPath} could not run: ${spawnError}`;
+		console.error(`block-dangerous-commands: ${detail}`);
+		onFailOpen?.(detail);
+		return failOpenVerdict;
+	}
+
 	if (timedOut) {
-		console.error(`block-dangerous-commands: ${scriptPath} timed out, failing open`);
+		const detail = `${scriptPath} timed out after ${timeoutMs}ms`;
+		console.error(`block-dangerous-commands: ${detail}, failing open`);
+		onFailOpen?.(detail);
 		return failOpenVerdict;
 	}
 
@@ -125,9 +143,9 @@ async function runHook(
 
 	// Any other non-zero exit → the hook itself broke. Fail open, but loudly.
 	if (exitCode !== 0) {
-		console.error(
-			`block-dangerous-commands: ${scriptPath} exited ${exitCode}: ${stderr.trim()}`,
-		);
+		const detail = `${scriptPath} exited ${exitCode}: ${stderr.trim()}`;
+		console.error(`block-dangerous-commands: ${detail}`);
+		onFailOpen?.(detail);
 		return failOpenVerdict;
 	}
 
@@ -158,16 +176,42 @@ export default function (pi: ExtensionAPI): void {
 	const preTool = join(hooksDir, "pre_tool_use.py");
 	const postTool = join(hooksDir, "post_tool_use.py");
 
+	// The pre-hook is the safety-critical path. It fails open on any problem — a
+	// broken ruleset must not brick the agent — but a silently-off gate is worse
+	// than a visibly-off one, so each failure mode is surfaced once, loudly.
+	//   - "missing": the script isn't synced in yet.
+	//   - "broken":  it's there but couldn't run (uv absent, timeout, crash).
+	// Both mean the same thing to the user: this call was NOT checked.
+	const warned = { missing: false, broken: false };
+	function warnGateOff(ctx: ExtensionContext, kind: "missing" | "broken", detail: string): void {
+		if (warned[kind]) return;
+		warned[kind] = true;
+		const msg =
+			kind === "missing"
+				? `block-dangerous-commands: hook scripts missing at ${hooksDir}; safety gate is OFF`
+				: `block-dangerous-commands: safety hook failed to run (${detail}); calls are NOT being checked`;
+		console.error(msg);
+		if (ctx.hasUI) ctx.ui.notify(`⚠ ${msg}`, "warning");
+	}
+
 	// PreToolUse: gate the call before it runs.
 	pi.on("tool_call", async (event, ctx) => {
 		const payload = toClaudePayload(event.toolName, event.input);
 		if (payload === null) return; // not a tool the hook inspects
+
+		// No script → running it would just spawn a failing `uv`. Skip the spawn,
+		// fail open, and warn once instead of on every call.
+		if (!existsSync(preTool)) {
+			warnGateOff(ctx, "missing", "");
+			return;
+		}
 
 		const verdict = await runHook(
 			preTool,
 			payload,
 			PRE_TIMEOUT_MS,
 			{ action: "allow" }, // fail open on hook error
+			(detail) => warnGateOff(ctx, "broken", detail),
 		);
 
 		if (verdict.action === "deny") {
@@ -194,6 +238,7 @@ export default function (pi: ExtensionAPI): void {
 		if (event.toolName !== "edit" && event.toolName !== "write") return;
 		const payload = toClaudePayload(event.toolName, event.input);
 		if (payload === null) return;
+		if (!existsSync(postTool)) return; // not synced → no lint feedback, skip the failing spawn
 
 		const verdict = await runHook(postTool, payload, POST_TIMEOUT_MS, {
 			action: "allow",
