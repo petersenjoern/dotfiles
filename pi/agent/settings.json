@@ -1,7 +1,7 @@
 {
   "defaultModel": "coding",
   "defaultProvider": "aegis",
-  "lastChangelogVersion": "0.84.1",
+  "lastChangelogVersion": "0.84.2",
   "packages": [
     "npm:pi-subagents",
     "npm:@juicesharp/rpiv-ask-user-question",
@@ -11,12 +11,26 @@
   ],
   "theme": "dark",
   "defaultThinkingLevel": "high",
+  "thinkingBudgets": {
+    "minimal": 512,
+    "low": 1024,
+    "medium": 2048,
+    "high": 4096
+  },
+  "subagents": {
+    "agentOverrides": {
+      "implement": { "model": "aegis/coding", "thinking": "low" },
+      "reviewer": { "model": "aegis/coding", "thinking": "high" },
+      "scout": { "model": "aegis/fast" }
+    }
+  },
   "enabledModels": [
     "openrouter/deepseek/deepseek-v4-pro",
     "openrouter/deepseek/deepseek-v4-flash",
     "openrouter/z-ai/glm-5.2",
     "aegis/coding",
     "aegis/fast",
-    "openrouter/moonshotai/kimi-k3"
+    "openrouter/moonshotai/kimi-k3",
+    "ollama/gemma4:latest"
   ]
 }

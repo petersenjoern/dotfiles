@@ -6,4 +6,5 @@
 **/secrets.sh
 logs/
 dotfiles.local.conf
+.claude/settings.local.json
 env/.local/scripts/datakit
