@@ -22,7 +22,7 @@ return {
         -- Register all keymaps with descriptions
         wk.add({
             -- Groups
-            { "<leader>c", group = "copy/cloak" },
+            { "<leader>c", group = "copy/cloak/claude" },
             { "<leader>d", group = "debug" },
             { "<leader>t", group = "test" },
             { "<leader>p", group = "project" },
@@ -46,6 +46,8 @@ return {
             { "<leader>cp", desc = "Copy file path" },
             { "<leader>ca", desc = "Cellular automaton" },
             { "<leader>ct", desc = "Toggle cloak" },
+            { "<leader>cs", desc = "Claude scratch files" },
+            { "<leader>cS", desc = "Newest Claude scratch file" },
             { "<leader>D", desc = "Delete to void register" },
             { "<leader>s", desc = "Search & replace word under cursor" },
             { "<leader>p", desc = "Paste over selection (keep clipboard)", mode = "x" },

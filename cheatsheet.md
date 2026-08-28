@@ -17,6 +17,22 @@ find . -name "*.py" | ff
 `g chore "msg"` - commit "chore: msg"
 `g ref "msg"`   - commit "refactor: msg"
 
+## Claude Code scratchpads (claude-scratch)
+Claude writes throwaway scripts to `/tmp/claude-<uid>/<project>/<session>/scratchpad`;
+the session id changes every run, so resolve it instead of clicking the CLI link.
+`cs`            - fzf-pick a scratch file (all sessions of this project) and open it
+                  columns: modified / size / session / name; the query matches the name only
+`csl`           - list them, newest first
+`cse`           - open the most recently written one
+`cscd`          - cd into the scratchpad dir holding the newest file
+`claude-scratch all` - newest scratchpads across every project
+In nvim: `<leader>cs` (pick) / `<leader>cS` (newest). In tmux: `prefix + C-s`.
+The nvim picker renders the same newest-first list as `cs`, same columns.
+"Newest session" is not the session with the newest file -- a running Claude
+creates an empty scratchpad dir immediately -- so ranking is by file, not dir.
+node_modules/.git/.venv/__pycache__ are skipped; Claude unpacks whole
+dependency trees in there sometimes.
+
 ## aws-vault wrappers
 `v` is aliased to `aws-vault`; `vp`/`vd` wrap `exec ... --`.
 `vp <cmd>`      - aws-vault exec prod -- <cmd>   (e.g. `vp make invoke-task-step ...`)
@@ -384,6 +400,10 @@ a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 `prefix + C-t`  - restore tmux windows for worktrees that lost their window
 `prefix + X`    - remove a worktree + window (safety checks; `--force`, `--volumes`)
 `prefix + C-x`  - recycle: reuse the window for a fresh branch off main (keeps services warm)
+
+## Claude Code scratchpads
+`prefix + C-s`  - pick a scratch file for this pane's project, opens in a `cc-scratch-*` window
+                  (tmux-resurrect's save moved to `prefix + M-s` to free this key)
 
 `M-1`..`M-9`    - jump straight to window N
 `M-,` / `M-.`   - move current window left / right
