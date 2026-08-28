@@ -50,3 +50,8 @@
 
 # Security
 - Never hardcode secrets, API keys, or passwords, even in test data. Always read from environment variables or use dummy safe values (e.g., `sk-test-...`) for testing.
+
+# Delegation
+- Spend your own thinking on scoping, architecture, and review; hand mechanical execution to the `implement` subagent, which runs on a cheaper tier.
+- A task is handoff-eligible only when you can write down every file to change, the concrete change in each, and one shell command that proves it. If you can write that, run `/handoff <plan-file>`. If you cannot, the task is not mechanical — keep it.
+- Never hand off a plan you have not verified against the actual code, and never accept a handoff result whose verify command did not actually run and pass.

@@ -22,7 +22,7 @@ return {
         -- Register all keymaps with descriptions
         wk.add({
             -- Groups
-            { "<leader>c", group = "copy/cloak" },
+            { "<leader>c", group = "copy/cloak/claude" },
             { "<leader>d", group = "debug" },
             { "<leader>t", group = "test" },
             { "<leader>p", group = "project" },
@@ -46,6 +46,8 @@ return {
             { "<leader>cp", desc = "Copy file path" },
             { "<leader>ca", desc = "Cellular automaton" },
             { "<leader>ct", desc = "Toggle cloak" },
+            { "<leader>cs", desc = "Claude scratch files" },
+            { "<leader>cS", desc = "Newest Claude scratch file" },
             { "<leader>D", desc = "Delete to void register" },
             { "<leader>s", desc = "Search & replace word under cursor" },
             { "<leader>p", desc = "Paste over selection (keep clipboard)", mode = "x" },
@@ -97,8 +99,8 @@ return {
             { "<leader>vrr", desc = "Show references" },
             { "<leader>vrn", desc = "Rename symbol" },
             { "<C-h>", desc = "Signature help", mode = "i" },
-            { "[d", desc = "Next diagnostic" },
-            { "]d", desc = "Prev diagnostic" },
+            { "]d", desc = "Next diagnostic" },
+            { "[d", desc = "Prev diagnostic" },
 
             -- From gitsigns (hunks)
             { "<leader>hp", desc = "Preview hunk" },
@@ -184,6 +186,14 @@ return {
             { "[M", desc = "Prev function end" },
             { "]C", desc = "Next class end" },
             { "[C", desc = "Prev class end" },
+            { "]a", desc = "Next parameter" },
+            { "[a", desc = "Prev parameter" },
+            { "]i", desc = "Next conditional" },
+            { "[i", desc = "Prev conditional" },
+            { "]o", desc = "Next loop" },
+            { "[o", desc = "Prev loop" },
+            { "]/", desc = "Next comment" },
+            { "[/", desc = "Prev comment" },
         })
     end,
 }

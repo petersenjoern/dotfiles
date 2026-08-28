@@ -17,6 +17,22 @@ find . -name "*.py" | ff
 `g chore "msg"` - commit "chore: msg"
 `g ref "msg"`   - commit "refactor: msg"
 
+## Claude Code scratchpads (claude-scratch)
+Claude writes throwaway scripts to `/tmp/claude-<uid>/<project>/<session>/scratchpad`;
+the session id changes every run, so resolve it instead of clicking the CLI link.
+`cs`            - fzf-pick a scratch file (all sessions of this project) and open it
+                  columns: modified / size / session / name; the query matches the name only
+`csl`           - list them, newest first
+`cse`           - open the most recently written one
+`cscd`          - cd into the scratchpad dir holding the newest file
+`claude-scratch all` - newest scratchpads across every project
+In nvim: `<leader>cs` (pick) / `<leader>cS` (newest). In tmux: `prefix + C-s`.
+The nvim picker renders the same newest-first list as `cs`, same columns.
+"Newest session" is not the session with the newest file -- a running Claude
+creates an empty scratchpad dir immediately -- so ranking is by file, not dir.
+node_modules/.git/.venv/__pycache__ are skipped; Claude unpacks whole
+dependency trees in there sometimes.
+
 ## aws-vault wrappers
 `v` is aliased to `aws-vault`; `vp`/`vd` wrap `exec ... --`.
 `vp <cmd>`      - aws-vault exec prod -- <cmd>   (e.g. `vp make invoke-task-step ...`)
@@ -121,23 +137,70 @@ C-p and C-pf    - find files
   │ Ctrl+s │ c       │ Toggle flash in search mode     │
   └────────┴─────────┴─────────────────────────────────┘
 
-  ┌─────────┬────────────────────────────────────────┐
-  │ Keybind │                 Action                 │
-  ├─────────┼────────────────────────────────────────┤
-  │ ]d      │ Go to next diagnostic                  │
-  ├─────────┼────────────────────────────────────────┤
-  │ [d      │ Go to previous diagnostic              │
-  ├─────────┼────────────────────────────────────────┤
-  │ ]e      │ Go to next error (skips warnings)      │
-  ├─────────┼────────────────────────────────────────┤
-  │ [e      │ Go to previous error                   │
-  ├─────────┼────────────────────────────────────────┤
-  │ ]w      │ Go to next warning                     │
-  ├─────────┼────────────────────────────────────────┤
-  │ [w      │ Go to previous warning                 │
-  ├─────────┼────────────────────────────────────────┤
-  │ <C-W>d  │ Open diagnostic float for current line │
-  └─────────┴────────────────────────────────────────┘
+## Bracket motions `[` / `]`
+Mnemonic: `]` always goes forward, `[` always goes backward. Uppercase = the
+*end* of the node instead of its start. All of these take a count (`3]m`), and
+the treesitter ones work in operator-pending mode too (`d]m`, `y[c`).
+
+### Learn these by heart
+  ┌───────────┬──────────────────────────────────────────────────────────────┐
+  │    Key    │                            Action                            │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ [{ / ]}   │ Jump to the *unmatched* enclosing brace. Repeat to climb out  │
+  │           │ of nested blocks. `[(` / `])` for parens. Works as an         │
+  │           │ operator target: `d[{`, `v]}`.                                │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]m / [m   │ Next / prev function start (treesitter). Best way to skim a   │
+  │           │ file's structure. `]M` / `[M` for function *end*.             │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]c / [c   │ Next / prev git hunk. Falls through to class start when the   │
+  │           │ buffer has no changes. `]C` / `[C` for class end.             │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]d / [d   │ Next / prev diagnostic (opens the float on arrival).          │
+  │           │ `<C-W>d` shows the diagnostic under the cursor without moving.│
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]q / [q   │ Next / prev quickfix entry (nvim default). `]Q` / `[Q` for    │
+  │           │ first / last. Anything that fills quickfix — Spectre, :grep,  │
+  │           │ vim-test failures, LSP references — becomes bracket-navigable.│
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]p / [p   │ Paste re-indented to match the current line. Not a motion,    │
+  │           │ but the bracket command you will use most.                    │
+  ├───────────┼──────────────────────────────────────────────────────────────┤
+  │ ]s / [s   │ Next / prev misspelled word (needs `:set spell`). Pair with   │
+  │           │ `z=` to correct and `zg` to add to the dictionary.            │
+  └───────────┴──────────────────────────────────────────────────────────────┘
+
+### Treesitter moves (nvim-treesitter-textobjects)
+  ┌─────────┬────────────────────┬──────────────────────────────────────────┐
+  │   Key   │       Target       │                 Textobject               │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]m / [m │ function start     │ `af` / `if` to select                    │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]M / [M │ function end       │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]c / [c │ class start        │ `ac` / `ic` to select                    │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]C / [C │ class end          │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]a / [a │ parameter          │ `aa` / `ia` to select                    │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]i / [i │ conditional (if)   │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]o / [o │ loop               │                                          │
+  ├─────────┼────────────────────┼──────────────────────────────────────────┤
+  │ ]/ / [/ │ comment            │                                          │
+  └─────────┴────────────────────┴──────────────────────────────────────────┘
+
+### Other built-ins worth knowing
+`]z` / `[z`     - end / start of the current open fold
+`` ]` `` / `` [` ``  - next / prev lowercase mark (`]'` / `['` for linewise)
+`]]` / `[[`     - next / prev section; fallback for files with no TS parser
+`[I`            - list every line containing the word under the cursor
+                  (`[<C-i>` jumps to the first one) — grep without leaving the buffer
+`]b` / `[b`     - next / prev buffer (nvim default; also `]B` / `[B` for first / last)
+`]l` / `[l`     - location list (nvim default; you also have `<leader>k` / `<leader>j`)
+`]<Space>`      - insert a blank line below without leaving normal mode (`[<Space>` above)
+
 
   Your config has these quickfix keymaps in remap.lua:56-62:
   - <C-k> - next quickfix item
@@ -250,6 +313,32 @@ C-S-e               - toggle tree
 Note: `.worktrees` is in `filesystem_watchers.ignore_dirs`, so files
 created there won't auto-appear — use `R` to refresh.
 
+### Resizing (cursor must be in the tree)
+C-Right             - widen by 5 columns
+C-Left              - narrow by 5 columns
+<leader>r           - reset to the configured width (35)
+:NvimTreeResize 50  - jump to an absolute width (`+10` / `-10` also work)
+
+Default width and `preserve_window_proportions` live in
+`env/.config/nvim/lua/config/lazy/nvim-tree.lua`. Without the latter, opening a
+file equalizes every window and the tree snaps back to its old size.
+
+### Creating files and folders
+`a` prompts with the containing directory pre-filled — the folder under the
+cursor, or the parent of the file under the cursor. What you type after it
+decides what gets made:
+  foo.lua             - a file
+  foo/                - a folder (trailing slash is the whole difference)
+  a/b/c.lua           - c.lua plus every missing folder on the way
+The new node is revealed in the tree afterwards, so you land on it.
+
+### Other file ops
+r / e / u           - rename (full name / basename only / full path)
+d / D               - delete / trash
+c / x / p           - copy / cut / paste into the folder under the cursor
+y / Y / gy          - yank filename / relative path / absolute path
+g?                  - full mapping list for the tree buffer
+
 ## Other
 :cq             - exit with error code
 :Ex!            - discard changes
@@ -265,9 +354,11 @@ tig tag-1.0..tag-2.0
 tig --since=1.month -n20 -- Documentation/
 tig --all --since=1.week -- Makefile
 
-## tig in a tmux popup (opens in the current pane's repo)
-`prefix + g`    - full tig (commit log) in a 90%x90% popup
-`prefix + G`    - tig status in a 90%x90% popup
+## tig from tmux (opens in the current pane's repo)
+`prefix + g`    - full tig (commit log) in a `tig-<repo>` window; again from
+                  inside it jumps back to the previous window
+`prefix + G`    - same, but tig status
+`prefix + C-g`  - throwaway tig popup (modal: M-<n> is dead until you quit)
 
 ## views
 m - Switch to main view.
@@ -289,14 +380,6 @@ c - Switch to stage view
 rg "hello" --type py
 rg -l "hello" --type py | ffm
 
-# Symbex
-## Often used
-symbex -x ./.venv -d . -s --docs --typed
-symbex -x ./.venv -d . "*dang* --docs --typed
-symbex -x ./.venv -d . "*dang*" --docs --typed  >> repomix-output.xml
-symbex -x ./.venv -d . --docs --class -s
-symbex -x ./.venv -f ./hello.py --async -s --docs --typed
-
 # Tmux
 Prefix is remapped to `C-a` (see `tmux/.tmux.conf`).
 
@@ -317,6 +400,10 @@ a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 `prefix + C-t`  - restore tmux windows for worktrees that lost their window
 `prefix + X`    - remove a worktree + window (safety checks; `--force`, `--volumes`)
 `prefix + C-x`  - recycle: reuse the window for a fresh branch off main (keeps services warm)
+
+## Claude Code scratchpads
+`prefix + C-s`  - pick a scratch file for this pane's project, opens in a `cc-scratch-*` window
+                  (tmux-resurrect's save moved to `prefix + M-s` to free this key)
 
 `M-1`..`M-9`    - jump straight to window N
 `M-,` / `M-.`   - move current window left / right

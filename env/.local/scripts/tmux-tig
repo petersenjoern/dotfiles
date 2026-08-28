@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Open tig in a dedicated tmux window instead of a popup: popups are modal, so
+# M-<n> window switching is dead until you quit tig. One window per repo root,
+# reused on subsequent invocations; pressing the key from inside it goes back.
+set -euo pipefail
+
+mode=${1:-log}
+cwd=${2:-$PWD}
+
+if ! root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null); then
+    tmux display-message "tig: not a git repository ($cwd)"
+    exit 0
+fi
+
+name="tig-$(basename "$root")"
+
+if [[ $(tmux display-message -p '#{window_name}') == "$name" ]]; then
+    tmux last-window
+elif ! tmux select-window -t "=$name" 2>/dev/null; then
+    case $mode in
+        status) tmux new-window -n "$name" -c "$root" tig status ;;
+        *) tmux new-window -n "$name" -c "$root" tig ;;
+    esac
+fi
