@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+# Reach Claude Code's scratchpad files from the shell, tmux or nvim.
+#
+# Claude writes throwaway scripts to
+#   /tmp/claude-<uid>/<project-path-with-non-alnum-as-dash>/<session-uuid>/scratchpad
+# The session uuid is new on every run, so there is no stable path to open --
+# without this you can only click the link in the CLI. Resolve it instead: mangle
+# $PWD the same way Claude does, then take the newest session under that key.
+set -u  # no pipefail: `| head` closing the pipe early is normal here
+
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+ROOT="${CLAUDE_SCRATCH_ROOT:-/tmp/claude-$(id -u)}"
+EDITOR_CMD="${CLAUDE_SCRATCH_EDITOR:-${EDITOR:-nvim}}"
+WINDOW_PREFIX="cc-scratch"
+
+# Claude sometimes unpacks a whole dependency tree into the scratchpad; one here
+# held 6k files under cdkjs2/package/node_modules, which buried the handful of
+# scripts worth opening and made every listing crawl.
+PRUNE=(-name node_modules -o -name .git -o -name .venv -o -name __pycache__)
+
+usage() {
+    cat <<'USAGE'
+usage: claude-scratch [-C dir] <command>
+
+  path        newest scratchpad dir for this project
+  dirs        every scratchpad dir for this project, newest first
+  ls          every scratch file across those dirs, newest first
+  newest      full path of the most recently written file
+  meta        tab-separated modified/size/session/name/path, newest first
+  edit        open the most recently written file
+  pick        fzf picker over all of them, opens the choice
+  window      run the picker in a dedicated tmux window (toggles)
+  all [n]     newest scratchpads across every project (default 20)
+
+  -C dir      resolve against dir instead of $PWD (tmux passes the pane path)
+USAGE
+}
+
+die() { printf '%s\n' "$*" >&2; exit 1; }
+
+key_for() { printf '%s' "$1" | sed 's/[^a-zA-Z0-9]/-/g'; }
+
+# Walks up parents, so a subdir of the project Claude was started in still hits.
+dirs_for() {
+    local dir="$1" key hits
+    while [[ -n $dir && $dir != "/" ]]; do
+        key=$(key_for "$dir")
+        hits=$(ls -1d "$ROOT/$key"/*/scratchpad 2>/dev/null)
+        if [[ -n $hits ]]; then printf '%s\n' "$hits"; return 0; fi
+        dir=$(dirname "$dir")
+    done
+    return 1
+}
+
+# Epoch (sort key), display time, bytes, path -- one pass, no per-file forks.
+# Sorting on the epoch rather than the string keeps it correct across midnight.
+scan() {
+    [[ $# -gt 0 ]] || return 0
+    find "$@" -type d \( "${PRUNE[@]}" \) -prune -o \
+        -type f -printf '%T@\t%Tm-%Td %TH:%TM\t%s\t%p\n' 2>/dev/null | sort -rn
+}
+
+files_in() { scan "$@" | cut -f4; }
+
+# Rank by the newest file inside, not by the directory's own mtime: every
+# running Claude session creates an empty scratchpad/, so an `ls -dt` ordering
+# always put the session you are sitting in first. Empty dirs sort last.
+rank_dirs() {
+    local d
+    for d in "$@"; do
+        printf '%s\t%s\n' "$(scan "$d" | head -1 | cut -f1)" "$d"
+    done | sort -rn | cut -f2-
+}
+
+# Tab-separated: modified, size, session (first 8 of the uuid), name, full path.
+# Newest first. `ls`, `pick` and the nvim picker all render from this, so they
+# cannot drift apart on ordering.
+files_meta() {
+    scan "$@" | awk -F'\t' -v root="$ROOT/" '
+        function ceil(x) { return x == int(x) ? x : int(x) + 1 }
+        function iec(n,   u, i) {   # rounds up, like numfmt --to=iec
+            split("B K M G T", u, " ")
+            for (i = 1; n >= 1024 && i < 5; i++) n /= 1024
+            if (i == 1) return sprintf("%d", n)
+            return n < 10 ? sprintf("%.1f%s", ceil(n * 10) / 10, u[i]) : sprintf("%d%s", ceil(n), u[i])
+        }
+        {
+            rest = substr($4, length(root) + 1)   # <project-key>/<uuid>/scratchpad/<name>
+            sub(/^[^\/]*\//, "", rest)
+            session = rest
+            sub(/\/.*/, "", session)
+            name = $4
+            sub(/^.*\/scratchpad\//, "", name)
+            printf "%s\t%s\t%s\t%s\t%s\n", $2, iec($3), substr(session, 1, 8), name, $4
+        }'
+}
+
+# fzf reads ESC + a character as alt-<char>, so a bare ESC followed closely by
+# typing never aborts -- it lands in the query instead. Make alt-<letter> quit;
+# the cost is eating that first char, plus fzf's own alt-b/d/f word editing,
+# which is a fair trade for queries this short. Digits are pointless here and
+# hjkl never arrive: tmux claims M-1..M-9 and M-h/j/k/l before fzf sees them.
+esc_binds() {
+    local key binds=""
+    for key in {a..z}; do
+        [[ $key == [hjkl] ]] && continue
+        binds+="alt-$key:abort,"
+    done
+    printf '%s' "${binds%,}"
+}
+
+# Fills the `dirs` array or exits; every command below needs it.
+resolve_dirs() {
+    mapfile -t dirs < <(dirs_for "$cwd")
+    [[ ${#dirs[@]} -gt 0 ]] || die "claude-scratch: no scratchpad for $cwd"
+    mapfile -t dirs < <(rank_dirs "${dirs[@]}")
+}
+
+# The newest session is usually the empty one, so look across all of them.
+newest_file() {
+    resolve_dirs
+    local file
+    file=$(files_in "${dirs[@]}" | head -1)
+    [[ -n $file ]] || die "claude-scratch: no scratch files for $cwd"
+    printf '%s\n' "$file"
+}
+
+cwd=$PWD
+if [[ ${1:-} == "-C" ]]; then
+    cwd=$(readlink -f "${2:?-C needs a directory}")  # keys are built from absolute paths
+    shift 2
+fi
+
+action=${1:-path}
+[[ $# -gt 0 ]] && shift
+
+case $action in
+    path)
+        resolve_dirs
+        printf '%s\n' "${dirs[0]}"
+        ;;
+    dirs)
+        resolve_dirs
+        printf '%s\n' "${dirs[@]}"
+        ;;
+    ls)
+        resolve_dirs
+        files_meta "${dirs[@]}" | while IFS=$'\t' read -r when size _ _ path; do
+            printf '%s  %6s  %s\n' "$when" "$size" "$path"
+        done
+        ;;
+    newest)
+        newest_file
+        ;;
+    meta)
+        resolve_dirs
+        files_meta "${dirs[@]}"
+        ;;
+    edit)
+        newest=$(newest_file) || exit 1
+        cd "$(dirname "$newest")" || exit 1
+        exec $EDITOR_CMD "$newest"
+        ;;
+    pick)
+        resolve_dirs
+        selected=$(files_meta "${dirs[@]}" |
+            fzf --prompt='scratch> ' --delimiter='\t' \
+                --with-nth=1,2,3,4 --nth=4 \
+                --header='modified       size  session   file' --header-first \
+                --bind "$(esc_binds)" \
+                --preview-window=right,55% \
+                --preview 'bat --style=numbers --color=always {5} 2>/dev/null || cat {5}' |
+            cut -f5)
+        [[ -n $selected ]] || exit 0   # also the abort path: fzf's status is hidden by the pipe
+        cd "$(dirname "$selected")" || exit 1
+        exec $EDITOR_CMD "$selected"
+        ;;
+    window)
+        # A dedicated window, not a popup: popups are modal, so M-<n> window
+        # switching would be dead until you quit nvim (same reason as tmux-tig).
+        resolve_dirs
+        name="$WINDOW_PREFIX-$(basename "$cwd")"
+        if [[ $(tmux display-message -p '#{window_name}') == "$name" ]]; then
+            tmux last-window
+        elif ! tmux select-window -t "=$name" 2>/dev/null; then
+            tmux new-window -n "$name" -c "${dirs[0]}" "$SELF -C '$cwd' pick"
+        fi
+        ;;
+    all)
+        find "$ROOT" -maxdepth 3 -name scratchpad -type d -printf '%T@ %p\n' 2>/dev/null |
+            sort -rn | cut -d' ' -f2- | head -"${1:-20}"
+        ;;
+    -h | --help | help)
+        usage
+        ;;
+    *)
+        usage >&2
+        exit 1
+        ;;
+esac

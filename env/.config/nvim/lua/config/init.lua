@@ -1,6 +1,7 @@
 require("config.set")
 require("config.remap")
 require("config.lazy_init")
+require("config.claude_scratch")
 
 -- DO.not
 -- DO NOT INCLUDE THIS

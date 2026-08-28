@@ -39,5 +39,11 @@ alias gauth="gcloud auth application-default login"
 alias opr="op run --env-file=.env.tpl --"
 
 
+# Claude Code scratchpads (throwaway scripts Claude writes under /tmp/claude-<uid>)
+alias cs="claude-scratch pick"
+alias csl="claude-scratch ls"
+alias cse="claude-scratch edit"
+cscd() { cd "$(claude-scratch path)"; }
+
 # Scripts execution
 alias ctypecheck="claude -p 'Run pyright on the entire project. List all errors grouped by file. For each error, suggest a fix but do not edit files.' --allowedTools 'Read,Bash,Grep,Glob'"

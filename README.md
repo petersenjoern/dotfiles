@@ -37,6 +37,7 @@ My goal is to maintain a consistent and productive environment across my machine
 ### Scripts & tools
 * `dev-env` / `dev-env-omarchy`: Scripts to purge old and copy new dotfiles into respective directories
 * `tmux-sessionizer`: project session launcher with git worktree support
+* `claude-scratch`: open Claude Code's throwaway scripts from the shell, tmux or nvim
 * Utility scripts: `timer`, `myip`, `cpwd`, `browser`
 * **Other tools**: `fzf`, `bat`, `fd`, `ripgrep`
 * **Cheatsheet**: quick reference for hotkeys and shortcuts (`cheatsheet.md`)
