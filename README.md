@@ -91,6 +91,9 @@ source ~/.zshrc
 > `hyprland.lua` and `autostart.lua` are left Omarchy-managed. The waybar/walker/mako stack
 > was replaced by the Quickshell `omarchy-shell` (bar config in `~/.config/omarchy/shell.json`,
 > untracked here — start tracking it only if customized).
+> Configs Omarchy also owns (ghostty, git) include its packaged copy rather than
+> replacing it, and tmux moves to `~/.config/tmux/tmux.conf`. See
+> [docs/OMARCHY-4-INTEROP.md](docs/OMARCHY-4-INTEROP.md).
 
 From now you can edit your configurations under `[path-to-folder/dotfiles]` and subsequently execute the setup script and `source ~/.zshrc` on any path.
 

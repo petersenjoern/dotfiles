@@ -94,11 +94,16 @@ copy $DEV_ENV/git/.gitconfig $HOME/.config/git/config
 copy $DEV_ENV/git/.gitignore $HOME/.gitignore
 
 # tmux
-copy $DEV_ENV/tmux/.tmux.conf $HOME/.tmux.conf
+# tmux loads ~/.tmux.conf first and ~/.config/tmux/tmux.conf second, so the XDG
+# path is the one that wins over anything Omarchy puts there.
+mkdir -p $HOME/.config/tmux
+copy $DEV_ENV/tmux/.tmux.conf $HOME/.config/tmux/tmux.conf
 if [[ $dry_run == "0" ]]; then
-    tmux source-file $HOME/.tmux.conf
+    rm -f $HOME/.tmux.conf
+    tmux source-file $HOME/.config/tmux/tmux.conf 2>/dev/null
 else
-    log "tmux source-file $HOME/.tmux.conf"
+    log "rm -f $HOME/.tmux.conf"
+    log "tmux source-file $HOME/.config/tmux/tmux.conf"
 fi
 
 # claude code
@@ -109,6 +114,10 @@ update_files $DEV_ENV/claude/hooks $HOME/.claude/hooks
 update_files $DEV_ENV/claude/commands $HOME/.claude/commands
 mkdir -p $HOME/.claude/skills
 update_files $DEV_ENV/claude/skills $HOME/.claude/skills
+
+# omarchy additive layer (theme template overrides; hooks/menu extensions go here too)
+mkdir -p $HOME/.config/omarchy
+update_files $DEV_ENV/omarchy $HOME/.config/omarchy
 
 # hyprland (Omarchy 4 Lua configs; hyprland.lua/autostart.lua stay Omarchy-managed)
 copy $DEV_ENV/key-mapping/input.lua $HOME/.config/hypr/input.lua
@@ -138,3 +147,15 @@ copy $DEV_ENV/mise.toml $HOME/mise.toml
 # atuin
 mkdir -p $HOME/.config/atuin
 copy $DEV_ENV/atuin/config.toml $HOME/.config/atuin/config.toml
+
+# Re-point the agent TUIs at the current Omarchy theme. Copying settings.json
+# above wipes the theme key, and claude/settings.json is shared with the
+# non-Omarchy dev-env, so it can't carry "custom:omarchy" in the repo.
+# --activate writes the theme file and sets the key. Omarchy 4 only.
+for activate in omarchy-theme-set-claude omarchy-theme-set-pi; do
+    if [[ $dry_run == "0" ]]; then
+        command -v $activate &> /dev/null && $activate --activate
+    else
+        log "$activate --activate"
+    fi
+done

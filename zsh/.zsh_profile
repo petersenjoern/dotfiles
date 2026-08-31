@@ -11,6 +11,21 @@ fi
 PERSONAL=$XDG_CONFIG_HOME/personal
 export DEV_ENV="${DOTFILES_REPOS_DIR:-$HOME/repos}/personal/dotfiles"
 
+# Omarchy 4 exports OMARCHY_PATH and its PATH additions from a POSIX-sh file
+# that only bash and the uwsm session read. Source it so ssh/tty zsh shells get
+# them too. See docs/OMARCHY-4-INTEROP.md.
+[ -r /usr/share/omarchy/default/bash/env-bootstrap ] &&
+    source /usr/share/omarchy/default/bash/env-bootstrap
+
+# bat.conf deliberately pins no --theme, since that would beat this. On Omarchy
+# use the terminal palette so bat retints with the theme; elsewhere keep the
+# theme bat.conf used to hardcode.
+if command -v omarchy > /dev/null 2>&1; then
+    export BAT_THEME=ansi
+else
+    export BAT_THEME=TwoDark
+fi
+
 for i in `find -L $PERSONAL`; do
     source $i
 done

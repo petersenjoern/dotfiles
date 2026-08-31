@@ -1,3 +1,10 @@
+# Omarchy's git defaults (aliases, rebase-on-pull, histogram diffs, rerere).
+# Missing include paths are ignored, so this is a no-op off Omarchy. Everything
+# below overrides it.
+[include]
+    path = /usr/share/omarchy/config/git/config
+[include]
+    path = ~/.local/share/omarchy/config/git/config
 [includeIf "gitdir:~/repos/personal/"]
     path = ~/.gitconfig-personal
 [includeIf "gitdir:~/repos/work/"]
