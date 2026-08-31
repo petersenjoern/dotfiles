@@ -1,13 +1,8 @@
 -- Omarchy renders a lazy.nvim spec for the active theme; lazy/omarchy.lua loads
--- it. Prefer that colorscheme when it exists so `omarchy theme set` reaches
--- nvim, and stay on rose-pine everywhere else (Ubuntu/WSL, first boot before
--- aether.nvim is installed).
-local omarchy_theme = vim.fn.expand("~/.local/state/omarchy/current/theme/neovim.lua")
-
+-- it and parks the name in vim.g.omarchy_colorscheme. Prefer that so `omarchy
+-- theme set` reaches nvim, and stay on rose-pine everywhere else (Ubuntu/WSL).
 function ColorMyPencils(color)
-	if not color then
-		color = vim.loop.fs_stat(omarchy_theme) and "aether" or "rose-pine-moon"
-	end
+	color = color or vim.g.omarchy_colorscheme or "rose-pine-moon"
 
 	if not pcall(vim.cmd.colorscheme, color) then
 		vim.cmd.colorscheme("rose-pine-moon")
