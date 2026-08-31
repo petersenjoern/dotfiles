@@ -8,3 +8,5 @@ logs/
 dotfiles.local.conf
 .claude/settings.local.json
 env/.local/scripts/datakit
+__pycache__/
+.ruff_cache/

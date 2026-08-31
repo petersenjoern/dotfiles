@@ -3,9 +3,9 @@
 # Overrides therefore live in their own include, listed last — later includes
 # win over earlier ones. Keep this file free of settings.
 #
-# Both Omarchy paths are optional (?) and only one resolves: /usr/share is
-# Omarchy 4, ~/.local/share is 3.x. They bring the font, the dynamic theme
-# include, the keybinds and the hyprland async-backend fix.
-config-file = ?"~/.local/share/omarchy/config/ghostty/config"
+# Omarchy 4's packaged config: the font, the dynamic theme include, the keybinds
+# and the hyprland async-backend fix. Optional (?), so this is a no-op elsewhere.
+# The 3.x path ~/.local/share/omarchy is not listed: the upgrade symlinks it to
+# /usr/share/omarchy, and Ghostty would then include the same file twice.
 config-file = ?"/usr/share/omarchy/config/ghostty/config"
 config-file = "personal.conf"
