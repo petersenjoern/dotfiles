@@ -4,7 +4,7 @@ A collection of configuration files for my personal development environment.
 
 ## About These Dotfiles
 
-These dotfiles represent my curated setup for native/WSL Ubuntu (see my repo devenv) and Archlinux (using Omarchy).
+These dotfiles represent my curated setup for native/WSL Ubuntu (see my repo devenv) and Archlinux (using Omarchy 4.x "Quattro").
 I am primarily working in web development and AI. Preferred tools for CLIs/scripts are bash, python and go.
 My goal is to maintain a consistent and productive environment across my machines with minimal friction and mouse usage. I believe in keyboard first, sensible defaults and powerful CLI tools.
 
@@ -85,6 +85,15 @@ SSH keys are managed by 1Password's SSH agent. Generate keys in 1Password, add p
 ./dev-env-omarchy
 source ~/.zshrc
 ```
+
+> **Note (Omarchy 4):** `dev-env-omarchy` assumes Omarchy >= 4.0.0 "Quattro", where
+> Hyprland config is Lua. The repo owns `~/.config/hypr/{bindings,monitors,input,looknfeel}.lua`;
+> `hyprland.lua` and `autostart.lua` are left Omarchy-managed. The waybar/walker/mako stack
+> was replaced by the Quickshell `omarchy-shell` (bar config in `~/.config/omarchy/shell.json`,
+> untracked here — start tracking it only if customized).
+> Configs Omarchy also owns (ghostty, git) include its packaged copy rather than
+> replacing it, and tmux moves to `~/.config/tmux/tmux.conf`. See
+> [docs/OMARCHY-4-INTEROP.md](docs/OMARCHY-4-INTEROP.md).
 
 From now you can edit your configurations under `[path-to-folder/dotfiles]` and subsequently execute the setup script and `source ~/.zshrc` on any path.
 

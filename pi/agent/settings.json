@@ -9,7 +9,7 @@
     "npm:@juicesharp/rpiv-web-tools",
     "npm:@narumitw/pi-firecrawl"
   ],
-  "theme": "dark",
+  "theme": "omarchy-system",
   "defaultThinkingLevel": "high",
   "thinkingBudgets": {
     "minimal": 512,

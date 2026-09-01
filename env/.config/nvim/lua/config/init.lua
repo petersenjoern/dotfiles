@@ -47,17 +47,9 @@ autocmd({"BufWritePre"}, {
     command = [[%s/\s\+$//e]],
 })
 
-autocmd('BufEnter', {
-    group = configGroup,
-    callback = function()
-        if vim.bo.filetype == "zig" then
-            vim.cmd.colorscheme("tokyonight-night")
-        else
-            vim.cmd.colorscheme("rose-pine-moon")
-        end
-    end
-})
-
+-- No colorscheme autocmd here: reapplying on every BufEnter overrode whatever
+-- Omarchy's theme had set. ColorMyPencils() in lazy/colors.lua picks the scheme
+-- once at startup.
 
 autocmd('LspAttach', {
     group = configGroup,

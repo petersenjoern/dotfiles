@@ -237,7 +237,10 @@ atuin sync
    ```
    (verify paths first; `tar tzf ~/predeploy-backup.tgz | head` to inspect)
 5. `cp dotfiles.local.conf.example dotfiles.local.conf` if not in tarball, fill in
-6. Run `./dev-env-omarchy` (or `./dev-env` for non-Arch)
+6. Run `./dev-env-omarchy` (or `./dev-env` for non-Arch).
+   **Omarchy 4 note:** `dev-env-omarchy` deploys Lua Hyprland configs and the
+   `~/.local/state/omarchy/current/` theme paths — it assumes Omarchy >= 4.0.0
+   "Quattro" and must not be run on an Omarchy 3.x machine.
 7. `source ~/.zshrc`
 8. `atuin login -u <username>` + `atuin sync -f`
 9. `gh auth login`, `docker login` (etc.) for services where you skipped credential backup

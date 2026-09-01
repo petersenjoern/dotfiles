@@ -1,6 +1,12 @@
+-- Omarchy renders a lazy.nvim spec for the active theme; lazy/omarchy.lua loads
+-- it and parks the name in vim.g.omarchy_colorscheme. Prefer that so `omarchy
+-- theme set` reaches nvim, and stay on rose-pine everywhere else (Ubuntu/WSL).
 function ColorMyPencils(color)
-	color = color or "rose-pine-moon"
-	vim.cmd.colorscheme(color)
+	color = color or vim.g.omarchy_colorscheme or "rose-pine-moon"
+
+	if not pcall(vim.cmd.colorscheme, color) then
+		vim.cmd.colorscheme("rose-pine-moon")
+	end
 
 	vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
