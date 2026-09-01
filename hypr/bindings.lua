@@ -14,25 +14,36 @@ rebind("SUPER + SHIFT + F", "File manager", { launch = "nautilus --new-window" }
 rebind("SUPER + ALT + SHIFT + F", "File manager (cwd)", 'uwsm-app -- nautilus --new-window "$(omarchy-cmd-terminal-cwd)"')
 rebind("SUPER + SHIFT + B", "Browser", "omarchy-launch-browser")
 rebind("SUPER + SHIFT + ALT + B", "Browser (private)", "omarchy-launch-browser --private")
--- rebind("SUPER + SHIFT + M", "Music", { launch = "spotify", focus = "spotify" })
 rebind("SUPER + SHIFT + N", "Editor", "omarchy-launch-editor")
 rebind("SUPER + SHIFT + T", "Activity", { tui = "btop" })
 rebind("SUPER + SHIFT + D", "Docker", { tui = "lazydocker" })
 rebind("SUPER + SHIFT + G", "Signal", { launch = "signal-desktop", focus = "^signal$" })
-rebind("SUPER + SHIFT + O", "Obsidian", { launch = "obsidian -disable-gpu --enable-wayland-ime", focus = "^obsidian$" })
+-- Class is org.telegram.desktop; omarchy-launch-or-focus matches \bpattern\b
+-- case-insensitively against class or title, so the bare word is enough.
+rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
 rebind("SUPER + SHIFT + SLASH", "Passwords", { launch = "1password" })
 
 -- Web apps
--- rebind("SUPER + SHIFT + A", "ChatGPT", { webapp = "https://chatgpt.com" })
--- rebind("SUPER + SHIFT + ALT + A", "Grok", { webapp = "https://grok.com" })
-rebind("SUPER + SHIFT + C", "Calendar", { webapp = "https://app.hey.com/calendar/weeks/" })
-rebind("SUPER + SHIFT + E", "Email", { webapp = "https://app.hey.com" })
--- rebind("SUPER + SHIFT + Y", "YouTube", { webapp = "https://youtube.com/" })
-rebind("SUPER + SHIFT + ALT + G", "WhatsApp", { webapp = "https://web.whatsapp.com/", focus = true })
-rebind("SUPER + SHIFT + CTRL + G", "Google Messages", { webapp = "https://messages.google.com/web/conversations", focus = true })
-rebind("SUPER + SHIFT + P", "Google Photos", { webapp = "https://photos.google.com/", focus = true })
+rebind("SUPER + SHIFT + A", "Claude", { webapp = "https://claude.ai" })
+rebind("SUPER + SHIFT + ALT + A", "ChatGPT", { webapp = "https://chatgpt.com" })
 rebind("SUPER + SHIFT + X", "X", { webapp = "https://x.com/" })
 rebind("SUPER + SHIFT + ALT + X", "X Post", { webapp = "https://x.com/compose/post" })
+
+-- Apps I don't use. Dropping our rebind() is not enough -- every key below is
+-- also an Omarchy default (bindings/applications.lua), so the default returns
+-- the moment our line goes away.
+for _, keys in ipairs({
+  "SUPER + SHIFT + C", -- Calendar (HEY)
+  "SUPER + SHIFT + E", -- Email (HEY)
+  "SUPER + SHIFT + ALT + E", -- New email (HEY)
+  "SUPER + SHIFT + M", -- Music (Spotify)
+  "SUPER + SHIFT + P", -- Google Photos
+  "SUPER + SHIFT + CTRL + G", -- Messenger (Google)
+  "SUPER + SHIFT + O", -- Obsidian
+  "SUPER + SHIFT + W", -- Writing (Omawrite)
+}) do
+  hl.unbind(keys)
+end
 
 -- Keep workspace switching on CTRL+1..9 only (SUPER+1..0 freed up).
 -- SUPER+SHIFT+code:* (move window to workspace) defaults are left untouched.
