@@ -390,8 +390,8 @@ Prefix is remapped to `C-a` (see `tmux/.tmux.conf`).
 `swap-pane -s <src> -t <dst>` - swap arbitrary panes by index (run as `:swap-pane ...`)
 
 ## Git worktrees (tmux-worktree)
-Each worktree is a `cc-wt-N` tmux window with a 5-pane dev layout
-(nvim / claude / shell / BE / FE). Windows are auto-tinted with a stable
+Each worktree is a `cc-wt-N` tmux window with a 7-pane dev layout
+(nvim / claude / shell / BE over App / FE over MCP). Windows are auto-tinted with a stable
 palette color (status-bar tab + pane borders) so you can tell them apart at
 a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 
@@ -400,6 +400,7 @@ a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 `prefix + C-t`  - restore tmux windows for worktrees that lost their window
 `prefix + X`    - remove a worktree + window (safety checks; `--force`, `--volumes`)
 `prefix + C-x`  - recycle: reuse the window for a fresh branch off main (keeps services warm)
+`prefix + C-l`  - relayout: snap drifted panes back into the 7- (or old 5-) pane layout, nothing restarts
 
 ## Claude Code scratchpads
 `prefix + C-s`  - pick a scratch file for this pane's project, opens in a `cc-scratch-*` window

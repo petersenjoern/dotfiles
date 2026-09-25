@@ -432,10 +432,15 @@ def prompt_branch(project_root: Path) -> tuple[bool, str | None]:
 SPLIT_MAIN_PCT = 50  # vertical divider: nvim | claude
 SPLIT_ROW_PCT = 30  # height of the shell / service row in both columns
 SPLIT_SERVICE_PCT = 50  # horizontal divider in the service row: be | fe
+SPLIT_STACK_PCT = 30  # height of app under be, and of mcp under fe
 
 # Pane roles in *layout-string order*, which is also the order tmux walks a
-# window's pane list when assigning panes to cells.
-LAYOUT_PANES = ("nvim", "shell", "claude", "be", "fe")
+# window's pane list when assigning panes to cells. Keyed by pane count:
+# create builds the 7-pane layout, relayout also repairs older 5-pane windows.
+LAYOUT_PANES = {
+    7: ("nvim", "shell", "claude", "be", "app", "fe", "mcp"),
+    5: ("nvim", "shell", "claude", "be", "fe"),
+}
 
 
 def layout_checksum(layout: str) -> str:
@@ -451,7 +456,7 @@ def layout_checksum(layout: str) -> str:
 
 
 def dev_layout_string(width: int, height: int, pane_ids: list[str]) -> str:
-    """Build the tmux layout string for the 5-pane dev layout at width x height.
+    """Build the tmux layout string for the 7- or 5-pane dev layout.
 
     Mirrors tmux's own split arithmetic (layout_split_pane): a `-p N` split
     gives the *new* pane `size * N / 100` and leaves the original with
@@ -459,9 +464,10 @@ def dev_layout_string(width: int, height: int, pane_ids: list[str]) -> str:
     percentages create_dev_layout() splits with, this reproduces a freshly
     created window byte-for-byte.
 
-    pane_ids are the numeric parts of the five %IDs in LAYOUT_PANES order.
-    tmux ignores them when applying a layout — panes are assigned to cells in
-    window order — but a well-formed string carries them.
+    pane_ids are the numeric parts of the %IDs in LAYOUT_PANES order; their
+    count picks the layout. tmux ignores them when applying a layout — panes
+    are assigned to cells in window order — but a well-formed string carries
+    them.
     """
     right_w = (width * SPLIT_MAIN_PCT) // 100
     left_w = width - 1 - right_w
@@ -473,7 +479,23 @@ def dev_layout_string(width: int, height: int, pane_ids: list[str]) -> str:
     rx = left_w + 1  # x of the right column
     ry = top_h + 1  # y of the bottom row
     fx = rx + be_w + 1  # x of the fe pane
-    nvim, shell, claude, be, fe = pane_ids
+
+    if len(pane_ids) == 7:
+        nvim, shell, claude, be, app, fe, mcp = pane_ids
+        low_h = (row_h * SPLIT_STACK_PCT) // 100
+        up_h = row_h - 1 - low_h
+        ly = ry + up_h + 1  # y of the app / mcp panes
+        service = (
+            f"{be_w}x{row_h},{rx},{ry}["
+            f"{be_w}x{up_h},{rx},{ry},{be},"
+            f"{be_w}x{low_h},{rx},{ly},{app}],"
+            f"{fe_w}x{row_h},{fx},{ry}["
+            f"{fe_w}x{up_h},{fx},{ry},{fe},"
+            f"{fe_w}x{low_h},{fx},{ly},{mcp}]"
+        )
+    else:
+        nvim, shell, claude, be, fe = pane_ids
+        service = f"{be_w}x{row_h},{rx},{ry},{be},{fe_w}x{row_h},{fx},{ry},{fe}"
 
     body = (
         f"{width}x{height},0,0{{"
@@ -482,9 +504,7 @@ def dev_layout_string(width: int, height: int, pane_ids: list[str]) -> str:
         f"{left_w}x{row_h},0,{ry},{shell}],"
         f"{right_w}x{height},{rx},0["
         f"{right_w}x{top_h},{rx},0,{claude},"
-        f"{right_w}x{row_h},{rx},{ry}{{"
-        f"{be_w}x{row_h},{rx},{ry},{be},"
-        f"{fe_w}x{row_h},{fx},{ry},{fe}}}]}}"
+        f"{right_w}x{row_h},{rx},{ry}{{{service}}}]}}"
     )
     return f"{layout_checksum(body)},{body}"
 
@@ -492,7 +512,7 @@ def dev_layout_string(width: int, height: int, pane_ids: list[str]) -> str:
 def create_dev_layout(
     window_name: str, wt_path: Path, *, detached: bool = False
 ) -> dict[str, str]:
-    """Create the 5-pane dev layout and return pane IDs.
+    """Create the 7-pane dev layout and return pane IDs.
 
     Layout:
     ┌──────────┬──────────┐
@@ -500,10 +520,13 @@ def create_dev_layout(
     │   Nvim   │  Claude  │
     │          │          │
     ├──────────┼────┬─────┤
-    │  Shell   │ BE │ FE  │
+    │          │ BE │ FE  │
+    │  Shell   ├────┼─────┤
+    │          │App │ MCP │
     └──────────┴────┴─────┘
 
-    Returns dict with keys: nvim, claude, shell, be, fe (values are pane IDs).
+    Returns dict with keys: nvim, claude, shell, be, fe, app, mcp (values are
+    pane IDs).
     """
     p: dict[str, str] = {}
 
@@ -531,6 +554,12 @@ def create_dev_layout(
         p["fe"] = tmux_split(
             p["be"], wt_path, horizontal=True, percent=SPLIT_SERVICE_PCT
         )
+    # Split be and fe bottom → app and mcp panes. Only after fe exists, so
+    # each keeps its own column's width.
+    if p.get("be"):
+        p["app"] = tmux_split(p["be"], wt_path, percent=SPLIT_STACK_PCT)
+    if p.get("fe"):
+        p["mcp"] = tmux_split(p["fe"], wt_path, percent=SPLIT_STACK_PCT)
 
     # Wait for shells to initialize, then check for dead panes
     time.sleep(1.5)
@@ -1048,10 +1077,11 @@ def cmd_relayout(args: argparse.Namespace) -> None:
             print(f"  ✗ {window}: no such window — skipped")
             warned = True
             continue
-        if len(panes) != len(LAYOUT_PANES):
+        slots = LAYOUT_PANES.get(len(panes))
+        if slots is None:
             print(
                 f"  ✗ {window}: has {len(panes)} panes, "
-                f"the dev layout needs {len(LAYOUT_PANES)} — skipped"
+                f"the dev layout needs 7 (or 5) — skipped"
             )
             print("      Close the extras (prefix+x) or add one, then retry.")
             warned = True
@@ -1077,7 +1107,7 @@ def cmd_relayout(args: argparse.Namespace) -> None:
             continue
 
         print(f"  ✓ {window}: layout restored ({width}x{height})")
-        for slot, (pid, cmd) in zip(LAYOUT_PANES, panes):
+        for slot, (pid, cmd) in zip(slots, panes):
             print(f"      {slot:<7} {pid:<5} {cmd}")
 
     if warned or not args.all:
