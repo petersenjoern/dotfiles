@@ -94,7 +94,25 @@ C-p and C-pf    - find files
   ├──────────────────┼────────────────────────────────────┤
   │ <leader>fe       │ Reveal file in tree (new)          │
   ├──────────────────┼────────────────────────────────────┤
+  │ <leader>gd       │ Diffview vs revision (editable)    │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>gh       │ Diffview: this file's history      │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>gH       │ Diffview: repo history             │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>gq       │ Diffview close                     │
+  ├──────────────────┼────────────────────────────────────┤
   │ <leader>gs       │ Telescope git status               │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>hb       │ Blame current line                 │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>hD       │ Review last N commits to file      │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>hp       │ Preview hunk                       │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>hq       │ Hunks to quickfix                  │
+  ├──────────────────┼────────────────────────────────────┤
+  │ <leader>hR       │ Reset diff base to index           │
   ├──────────────────┼────────────────────────────────────┤
   │ <leader>j/k      │ Location list nav                  │
   ├──────────────────┼────────────────────────────────────┤
@@ -137,6 +155,21 @@ C-p and C-pf    - find files
   │ Ctrl+s │ c       │ Toggle flash in search mode     │
   └────────┴─────────┴─────────────────────────────────┘
 
+## Reviewing a file's recent commits
+Replaces reading `tig <file>` and then hunting for the same lines in nvim.
+`<leader>hD`    - prompt for N (default 5), then diff the buffer against N
+                  commits back in *this file's* history. Signs mark what those
+                  commits changed, `]c` / `[c` walk them, `<leader>hp` shows the
+                  old text. Buffer-local, so other files keep the normal base.
+`<leader>hR`    - back to diffing against the index
+`<leader>hq`    - all hunks into quickfix (`<C-k>` / `<C-j>` to walk them)
+`<leader>gh`    - Diffview: this file's commit log, inside nvim (the tig view)
+`<leader>gd`    - Diffview against a revision; the right pane is the working
+                  tree and stays editable, so you fix the text in the diff
+N counts commits that touched *this file*, the same unit `tig <file>` shows.
+`HEAD~N` is not the same thing: master is all PR merges, so `HEAD~5` there
+means five PRs. If a file is younger than N commits you get its whole history.
+
 ## Bracket motions `[` / `]`
 Mnemonic: `]` always goes forward, `[` always goes backward. Uppercase = the
 *end* of the node instead of its start. All of these take a count (`3]m`), and
@@ -155,6 +188,7 @@ the treesitter ones work in operator-pending mode too (`d]m`, `y[c`).
   ├───────────┼──────────────────────────────────────────────────────────────┤
   │ ]c / [c   │ Next / prev git hunk. Falls through to class start when the   │
   │           │ buffer has no changes. `]C` / `[C` for class end.             │
+  │           │ `<leader>hD` re-bases the hunks onto older commits.           │
   ├───────────┼──────────────────────────────────────────────────────────────┤
   │ ]d / [d   │ Next / prev diagnostic (opens the float on arrival).          │
   │           │ `<C-W>d` shows the diagnostic under the cursor without moving.│
@@ -344,6 +378,8 @@ g?                  - full mapping list for the tree buffer
 :Ex!            - discard changes
 
 # TIG (https://jonas.github.io/tig/doc/manual.html)
+For one file's history, `<leader>gh` in nvim shows the same thing without
+leaving the editor. tig still wins for repo-wide browsing and `tig blame`.
 tig <tab> (to easily select directories/filenames/commits)
 tig <filename>
 tig <directory>
@@ -406,5 +442,18 @@ a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 `prefix + C-s`  - pick a scratch file for this pane's project, opens in a `cc-scratch-*` window
                   (tmux-resurrect's save moved to `prefix + M-s` to free this key)
 
+## Window navigation
 `M-1`..`M-9`    - jump straight to window N
 `M-,` / `M-.`   - move current window left / right
+`prefix + '`    - prompt for a window index; the way to reach window 10 and up
+`prefix + w`    - choose-tree overview of every session and window
+
+### Inside the choose-tree overview
+The keys in the left column (`(0)`..`(9)`, then `(M-a)`, `(M-b)`, ...) are row
+shortcuts, not window numbers — `1` lands on the second *row*, whatever that
+is. Press the label printed next to the line you want, or `j`/`k` + `Enter`.
+`/foo` + `Enter` searches window names (`n` = next match); that is the
+substring search.
+`f` is not one: it takes a *format expression*, and any plain word is true, so
+filtering on `todo` silently keeps every row. The real form is
+`#{m:*todo*,#{window_name}}`.
