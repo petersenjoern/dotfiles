@@ -442,5 +442,18 @@ a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 `prefix + C-s`  - pick a scratch file for this pane's project, opens in a `cc-scratch-*` window
                   (tmux-resurrect's save moved to `prefix + M-s` to free this key)
 
+## Window navigation
 `M-1`..`M-9`    - jump straight to window N
 `M-,` / `M-.`   - move current window left / right
+`prefix + '`    - prompt for a window index; the way to reach window 10 and up
+`prefix + w`    - choose-tree overview of every session and window
+
+### Inside the choose-tree overview
+The keys in the left column (`(0)`..`(9)`, then `(M-a)`, `(M-b)`, ...) are row
+shortcuts, not window numbers — `1` lands on the second *row*, whatever that
+is. Press the label printed next to the line you want, or `j`/`k` + `Enter`.
+`/foo` + `Enter` searches window names (`n` = next match); that is the
+substring search.
+`f` is not one: it takes a *format expression*, and any plain word is true, so
+filtering on `todo` silently keeps every row. The real form is
+`#{m:*todo*,#{window_name}}`.
