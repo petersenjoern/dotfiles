@@ -34,6 +34,7 @@
     ],
     "defaultMode": "auto"
   },
+  "cleanupPeriodDays": 180,
   "outputStyle": "default",
   "effortLevel": "high",
   "attribution": {
@@ -42,7 +43,8 @@
   },
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
-    "OTEL_METRICS_EXPORTER": "otlp"
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN": "1"
   },
   "enabledPlugins": {
     "pr-review-toolkit@claude-plugins-official": false,
@@ -140,10 +142,5 @@
         ]
       }
     ]
-  },
-  "skillOverrides": {
-    "doubt": "off",
-    "failmodes": "off",
-    "unsaid": "off"
   }
 }
