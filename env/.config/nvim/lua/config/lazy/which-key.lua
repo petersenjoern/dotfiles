@@ -28,6 +28,7 @@ return {
             { "<leader>p", group = "project" },
             { "<leader>e", group = "error handling (Go)" },
             { "<leader>h", group = "git hunks" },
+            { "<leader>g", group = "git" },
             { "<leader>s", group = "search/replace" },
             { "<leader>v", group = "vim LSP" },
             { "<leader>f", group = "file/format" },
@@ -105,8 +106,17 @@ return {
             -- From gitsigns (hunks)
             { "<leader>hp", desc = "Preview hunk" },
             { "<leader>hb", desc = "Blame line" },
+            { "<leader>hD", desc = "Review last N commits to file" },
+            { "<leader>hR", desc = "Reset diff base" },
+            { "<leader>hq", desc = "Hunks to quickfix" },
             { "]c", desc = "Next git hunk / class start" },
             { "[c", desc = "Prev git hunk / class start" },
+
+            -- From diffview
+            { "<leader>gh", desc = "History of this file" },
+            { "<leader>gH", desc = "History of the repo" },
+            { "<leader>gd", desc = "Diff against revision" },
+            { "<leader>gq", desc = "Close diffview" },
 
             -- From nvim-tree
             { "<C-S-e>", desc = "Toggle file tree" },
