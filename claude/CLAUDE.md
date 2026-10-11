@@ -7,6 +7,13 @@ test`, `uv run pytest`) — do NOT prepend `export PATH="$HOME/.local/share/mise
 to commands. Prepending it turns every command into a compound `export ... && cmd`
 that no longer matches permission allow-rules or auto-mode, causing needless prompts.
 
+AWS commands I run myself go through aws-vault shell aliases, one per
+environment: `vp` (prod), `vd` (development and feature envs like
+`feature-jp`), `vt` (test). When writing a run line for me, prefix the command
+with the alias, e.g. `ENVIRONMENT=prod SINCE=2026-10-08 vp uv run python
+scratch/probe_issns_attribute.py`. Never write `<prod AWS exec>` or another
+placeholder.
+
 ## Git
 
 - Pre-commit hooks run ruff format on Python files. If the hook reformats a
@@ -17,6 +24,13 @@ that no longer matches permission allow-rules or auto-mode, causing needless pro
 ## Workflow Rules
 
 - Never create PRs unless explicitly asked.
+- When I open a PR through you, or tell you which PR number the branch belongs
+  to, start a 10-minute poll in the same turn (`/loop 10m`, or a
+  CronCreate/ScheduleWakeup loop). On each tick, check `gh pr view <n> --json
+  state` and fetch comments posted since the last check: review comments,
+  issue comments, and reviews (`gh api repos/{owner}/{repo}/pulls/<n>/comments`,
+  `.../issues/<n>/comments`, `.../pulls/<n>/reviews`). Address or report each
+  new comment. Stop the loop once the PR is merged or closed.
 - When the request is straightforward, skip brainstorming/option-listing and go
 directly to implementation. Only brainstorm when explicitly asked or when the
 problem is genuinely ambiguous.
