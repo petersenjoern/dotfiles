@@ -1,0 +1,16 @@
+{
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
+  "defaultProvider": "google-vertex",
+  "defaultModel": "gemini-4-argon",
+  "subagents": {
+    "agentOverrides": {
+      "implement": { "model": "google-vertex/gemini-4-argon", "thinking": "low" },
+      "reviewer": { "model": "google-vertex/gemini-4-argon", "thinking": "high" },
+      "scout": { "model": "google-vertex/gemini-3.8-flash" }
+    }
+  },
+  "enabledModels": [
+    "google-vertex/gemini-4-argon",
+    "google-vertex/gemini-3.8-flash"
+  ]
+}

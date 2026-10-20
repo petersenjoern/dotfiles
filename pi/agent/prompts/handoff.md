@@ -18,25 +18,31 @@ offer to finish the plan first. That check is the whole point of this workflow:
 if the plan cannot be written down completely, the task is not mechanical and
 you should keep it yourself.
 
-When the plan is ready, launch it with the `subagent` tool as a workflow. Pass
-the plan by path so the child reads the file itself. Use the verify command from
-the plan as the `gate`:
+When the plan is ready, launch it with the `subagent` tool as a workflow by
+writing one `js workflow` block in your reply and calling
+`subagent({ workflow: true, async: false })` in the same reply. Pass the plan by
+path so the child reads the file itself. Use the verify command from the plan as
+the `gate`:
+
+```js workflow
+const impl = await runs.run("impl", {
+  label: "Apply approved plan",
+  agent: "implement",
+  task: "Apply the approved plan in <plan-path>. Read it first. Change only the files it names. Run its verify command and report the real result.",
+  gate: "<verify command from the plan>"
+});
+const review = await runs.run("review", {
+  label: "Review diff against plan",
+  agent: "reviewer",
+  context: "fresh",
+  task: "Review the working-tree diff against the plan in <plan-path>. Check only: does the diff do what the plan says, no more and no less; are there bugs; did anything drift out of scope. Read the plan and the diff from disk. Do not edit files.",
+  output: false
+});
+return { impl: impl.output, review: review.output };
+```
 
 ```js
-subagent({ workflowScript: `
-  const impl = await runs.run("impl", {
-    agent: "implement",
-    task: "Apply the approved plan in <plan-path>. Read it first. Change only the files it names. Run its verify command and report the real result.",
-    gate: "<verify command from the plan>"
-  });
-  const review = await runs.run("review", {
-    agent: "reviewer",
-    context: "fresh",
-    task: "Review the working-tree diff against the plan in <plan-path>. Check only: does the diff do what the plan says, no more and no less; are there bugs; did anything drift out of scope. Read the plan and the diff from disk. Do not edit files.",
-    output: false
-  });
-  return { impl: impl.output, review: review.output };
-` , async: false })
+subagent({ workflow: true, async: false })
 ```
 
 Do not set `turnBudget` or a hard `toolBudget` on the implement child — cutting a

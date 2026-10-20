@@ -135,6 +135,22 @@ copy $DEV_ENV/tig/.tigrc $HOME/.tigrc
 # pi
 mkdir -p $HOME/.pi
 update_files $DEV_ENV/pi $HOME/.pi
+if [[ $dry_run == "0" ]]; then
+    rm -f $HOME/.pi/agent/extensions/omarchy-system-theme.ts
+    rm -f $HOME/.pi/agent/settings.local.json $HOME/.pi/agent/settings.local.json.example
+    if [[ -f "$DEV_ENV/pi/agent/settings.local.json" ]]; then
+        jq -s '.[0] * .[1]' \
+            "$DEV_ENV/pi/agent/settings.json" \
+            "$DEV_ENV/pi/agent/settings.local.json" \
+            > "$HOME/.pi/agent/settings.json"
+    fi
+else
+    log "rm -f $HOME/.pi/agent/extensions/omarchy-system-theme.ts"
+    log "rm -f $HOME/.pi/agent/settings.local.json $HOME/.pi/agent/settings.local.json.example"
+    if [[ -f "$DEV_ENV/pi/agent/settings.local.json" ]]; then
+        log "jq -s '.[0] * .[1]' $DEV_ENV/pi/agent/settings.json $DEV_ENV/pi/agent/settings.local.json > $HOME/.pi/agent/settings.json"
+    fi
+fi
 copy $DEV_ENV/mouseless/config.yaml $HOME/.mouseless/configs/config.yaml
 
 #systemd

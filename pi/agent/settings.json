@@ -1,7 +1,11 @@
 {
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
   "defaultModel": "coding",
   "defaultProvider": "aegis",
-  "lastChangelogVersion": "0.84.2",
+  "defaultTools": [
+    "+codemode"
+  ],
+  "lastChangelogVersion": "1.3.0",
   "packages": [
     "npm:pi-subagents",
     "npm:@juicesharp/rpiv-ask-user-question",
@@ -10,7 +14,20 @@
     "npm:@narumitw/pi-firecrawl"
   ],
   "theme": "omarchy-system",
+  "tuiMode": "regular",
   "defaultThinkingLevel": "high",
+  "modelThinkingLevels": {
+    "aegis/coding": "high",
+    "aegis/fast": "low",
+    "google-vertex/gemini-4-argon": "high",
+    "google-vertex/gemini-3.8-flash": "low",
+    "openrouter/deepseek/deepseek-v4-pro": "high",
+    "openrouter/deepseek/deepseek-v4-flash": "low",
+    "openrouter/z-ai/glm-5.2": "high",
+    "openrouter/moonshotai/kimi-k3": "high",
+    "ollama/gemma4:latest": "medium",
+    "ollama/gemma4": "medium"
+  },
   "thinkingBudgets": {
     "minimal": 512,
     "low": 1024,
