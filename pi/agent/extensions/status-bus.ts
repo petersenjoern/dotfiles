@@ -1,14 +1,14 @@
 /**
  * Pi Agent Status Bus
  *
- * Wires the `pi-status-bucket.py` into pi's `tool_call` / `tool_result`
- * events so /tmp/pi-agent-status/ reflects pi's activity—same pattern as Claude
+ * Wires `pi-status-bucket.py` into pi's agent lifecycle and UI prompt events
+ * so /tmp/pi-agent-status/ reflects pi's activity—same pattern as Claude
  * Code's status_hook.py → tmux-cc-indicator.
  *
  * States emitted to /tmp/pi-agent-status/<tmux_pane>:
- *   "working"   → pi is actively burning tokens
- *   "idle"      → pi finished a tool call
- *   "attention" → (reserved) agent is waiting for user
+ *   "working"   → pi is actively running a turn or tool
+ *   "attention" → pi is blocked waiting on user input/confirmation
+ *   "idle"      → pi has settled or shut down
  */
 
 import { existsSync } from "node:fs";
@@ -29,11 +29,15 @@ function emitState(state: "working" | "attention" | "idle"): void {
 }
 
 export default function (pi: ExtensionAPI): void {
-	pi.on("tool_call", async () => emitState("working"));
+	pi.on("agent_start", async () => emitState("working"));
 
-	pi.on("tool_result", async () => emitState("idle"));
+	pi.on("ui_prompt_start", async () => emitState("attention"));
 
-	// If pi ever emits a confirmation event, we'd wire it to "attention" here.
-	// For now, the tool result already resets the state, so "attention" is
-	// implicit between the tool call and its result.
+	pi.on("ui_prompt_end", async (_event, ctx) => {
+		emitState(ctx.isIdle() ? "idle" : "working");
+	});
+
+	pi.on("agent_settled", async () => emitState("idle"));
+
+	pi.on("session_shutdown", async () => emitState("idle"));
 }
