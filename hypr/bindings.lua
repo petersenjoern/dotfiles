@@ -45,6 +45,10 @@ for _, keys in ipairs({
   hl.unbind(keys)
 end
 
+-- Second scratchpad, mirroring Omarchy's SUPER+S / SUPER+ALT+S pair
+o.bind("SUPER + D", "Toggle scratchpad 2", hl.dsp.workspace.toggle_special("scratchpad2"))
+o.bind("SUPER + ALT + D", "Move window to scratchpad 2", hl.dsp.window.move({ workspace = "special:scratchpad2", follow = false }))
+
 -- Keep workspace switching on CTRL+1..9 only (SUPER+1..0 freed up).
 -- SUPER+SHIFT+code:* (move window to workspace) defaults are left untouched.
 for ws = 1, 10 do
