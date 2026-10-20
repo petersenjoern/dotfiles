@@ -20,6 +20,8 @@ placeholder.
   file, the commit fails. Re-stage the reformatted files and commit again.
 - Commits are GPG-signed via 1Password. If signing fails with "failed to fill
   whole buffer", retry the commit.
+- Never add `Co-Authored-By: Claude` (or any other Claude/AI attribution
+  trailer) to commit messages or PR bodies. GitHub lists it as a co-author.
 
 ## Workflow Rules
 
