@@ -22,6 +22,7 @@ rebind("SUPER + SHIFT + G", "Signal", { launch = "signal-desktop", focus = "^sig
 -- case-insensitively against class or title, so the bare word is enough.
 rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
 rebind("SUPER + SHIFT + SLASH", "Passwords", { launch = "1password" })
+rebind("SUPER + SHIFT + W", "Workspace layout", "$HOME/.local/scripts/workspace-layout")
 
 -- Web apps
 rebind("SUPER + SHIFT + A", "Claude", { webapp = "https://claude.ai" })
@@ -40,7 +41,6 @@ for _, keys in ipairs({
   "SUPER + SHIFT + P", -- Google Photos
   "SUPER + SHIFT + CTRL + G", -- Messenger (Google)
   "SUPER + SHIFT + O", -- Obsidian
-  "SUPER + SHIFT + W", -- Writing (Omawrite)
 }) do
   hl.unbind(keys)
 end
