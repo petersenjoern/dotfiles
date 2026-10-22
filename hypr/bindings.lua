@@ -22,6 +22,7 @@ rebind("SUPER + SHIFT + G", "Signal", { launch = "signal-desktop", focus = "^sig
 -- case-insensitively against class or title, so the bare word is enough.
 rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
 rebind("SUPER + SHIFT + W", "Workspace layout", "$HOME/.local/scripts/workspace-layout")
+rebind("SUPER + SHIFT + P", "Tmux project", "$HOME/.local/scripts/tmux-project")
 
 -- Pop-ups: each app lives in its own special workspace
 rebind("SUPER + SHIFT + SLASH", "Passwords", "$HOME/.local/scripts/popup 1password '^com.onepassword.OnePassword$' 'uwsm-app -- 1password'")
@@ -40,7 +41,6 @@ for _, keys in ipairs({
   "SUPER + SHIFT + E", -- Email (HEY)
   "SUPER + SHIFT + ALT + E", -- New email (HEY)
   "SUPER + SHIFT + M", -- Music (Spotify)
-  "SUPER + SHIFT + P", -- Google Photos
   "SUPER + SHIFT + CTRL + G", -- Messenger (Google)
   "SUPER + SHIFT + O", -- Obsidian
 }) do
