@@ -57,11 +57,11 @@
   "hooks": {
     "Notification": [
       {
-        "matcher": "",
+        "matcher": "permission_prompt|elicitation_dialog|idle_prompt",
         "hooks": [
           {
             "type": "command",
-            "command": "notify-send 'Claude Code' 'Awaiting your input'"
+            "command": "~/.claude/hooks/notify.sh"
           }
         ]
       },
