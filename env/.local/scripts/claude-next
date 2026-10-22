@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Focus the next Claude Code pane waiting on you: longest-waiting input prompt
+# first, then the most recently finished. Pressing again moves past the
+# current pane. Only panes running claude count: status_hook.py's state files
+# outlive their panes, and a tmux restart reuses pane ids.
+dir=/tmp/claude-status
+live=$(tmux list-panes -a -F '#{pane_id} #{pane_current_command}' 2>/dev/null | awk '$2 == "claude" { print $1 }')
+
+queue=()
+for order in "attention -tr" "idle -t"; do
+    read -r state flag <<<"$order"
+    for pane in $(ls "$flag" "$dir" 2>/dev/null); do
+        [[ $(<"$dir/$pane") == "$state" ]] && grep -qxF -- "$pane" <<<"$live" && queue+=("$pane")
+    done
+done
+
+if ((${#queue[@]} == 0)); then
+    omarchy-notification-send -u low "No Claude session waiting"
+    exit 0
+fi
+
+current=$(tmux display -p '#{pane_id}')
+next=${queue[0]}
+for i in "${!queue[@]}"; do
+    [[ ${queue[i]} == "$current" ]] && next=${queue[(i + 1) % ${#queue[@]}]}
+done
+exec "$(dirname "$0")/tmux-focus" "$next"

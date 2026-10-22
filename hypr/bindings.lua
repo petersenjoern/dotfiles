@@ -23,6 +23,7 @@ rebind("SUPER + SHIFT + G", "Signal", { launch = "signal-desktop", focus = "^sig
 rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
 rebind("SUPER + SHIFT + W", "Workspace layout", "$HOME/.local/scripts/workspace-layout")
 rebind("SUPER + SHIFT + P", "Tmux project", "$HOME/.local/scripts/tmux-project")
+rebind("SUPER + ALT + A", "Next waiting Claude", "$HOME/.local/scripts/claude-next")
 
 -- Pop-ups: each app lives in its own special workspace
 rebind("SUPER + SHIFT + SLASH", "Passwords", "$HOME/.local/scripts/popup 1password '^com.onepassword.OnePassword$' 'uwsm-app -- 1password'")
