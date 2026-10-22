@@ -21,8 +21,11 @@ rebind("SUPER + SHIFT + G", "Signal", { launch = "signal-desktop", focus = "^sig
 -- Class is org.telegram.desktop; omarchy-launch-or-focus matches \bpattern\b
 -- case-insensitively against class or title, so the bare word is enough.
 rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
-rebind("SUPER + SHIFT + SLASH", "Passwords", { launch = "1password" })
 rebind("SUPER + SHIFT + W", "Workspace layout", "$HOME/.local/scripts/workspace-layout")
+
+-- Pop-ups: each app lives in its own special workspace
+rebind("SUPER + SHIFT + SLASH", "Passwords", "$HOME/.local/scripts/popup 1password '^com.onepassword.OnePassword$' 'uwsm-app -- 1password'")
+rebind("SUPER + SHIFT + C", "Discord", "$HOME/.local/scripts/popup discord '^chrome-discord.com__' 'omarchy-launch-webapp https://discord.com/channels/@me'")
 
 -- Web apps
 rebind("SUPER + SHIFT + A", "Claude", { webapp = "https://claude.ai" })
@@ -34,7 +37,6 @@ rebind("SUPER + SHIFT + ALT + X", "X Post", { webapp = "https://x.com/compose/po
 -- also an Omarchy default (bindings/applications.lua), so the default returns
 -- the moment our line goes away.
 for _, keys in ipairs({
-  "SUPER + SHIFT + C", -- Calendar (HEY)
   "SUPER + SHIFT + E", -- Email (HEY)
   "SUPER + SHIFT + ALT + E", -- New email (HEY)
   "SUPER + SHIFT + M", -- Music (Spotify)
