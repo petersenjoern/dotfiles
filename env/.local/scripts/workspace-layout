@@ -9,9 +9,6 @@ work)
         "1|uwsm-app -- google-chrome-stable --new-window https://www.google.com"
         "2|omarchy-launch-terminal bash -c 'tmux attach || tmux'"
         "3|omarchy-launch-webapp https://github.com/"
-        "special:discord|omarchy-launch-webapp https://discord.com/channels/@me"
-        "special:1password|uwsm-app -- 1password"
-        "7|omarchy-launch-tui btop"
         "8|omarchy-launch-webapp https://claude.ai"
         "9|uwsm-app -- nautilus --new-window"
     )
@@ -20,7 +17,6 @@ focus)
     layout=(
         "1|uwsm-app -- google-chrome-stable --new-window https://www.google.com"
         "2|omarchy-launch-terminal bash -c 'tmux attach || tmux'"
-        "special:1password|uwsm-app -- 1password"
         "8|omarchy-launch-webapp https://claude.ai"
     )
     ;;
