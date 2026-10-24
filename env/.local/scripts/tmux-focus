@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Usage: tmux-focus [pane]
+# Focus the terminal tmux is attached in, then switch it to <pane> if given.
+# Every Ghostty window shares one PID, so the window is found by title, which
+# tmux sets to the client's #T (set-titles).
+
+client=$(tmux list-clients -F '#{client_activity} #{client_name}' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2)
+[[ -z $client ]] && exit 1
+
+title=$(tmux display -p -c "$client" '#T')
+addr=$(hyprctl clients -j | jq -r --arg t "$title" 'first(.[] | select(.class == "com.mitchellh.ghostty" and .title == $t)) | .address')
+[[ -n $addr ]] && hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })"
+
+if [[ -n $1 ]]; then
+    tmux switch-client -c "$client" -t "$1"
+    tmux select-window -t "$1"
+    tmux select-pane -t "$1"
+fi

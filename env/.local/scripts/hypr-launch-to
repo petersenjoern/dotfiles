@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Usage: hypr-launch-to <workspace> <command>
+# Run a command and move the window it opens to a workspace without following.
+# Exec rules track the launched PID, which Chrome and uwsm-app hand off, so
+# wait for any new window instead.
+
+addresses() { hyprctl clients -j | jq -r '.[].address' | sort; }
+
+before=$(addresses)
+setsid bash -c "$2" &>/dev/null &
+
+for _ in {1..80}; do
+    sleep 0.25
+    new=$(comm -13 <(echo "$before") <(addresses) | head -1)
+    [[ -n $new ]] && break
+done
+
+[[ -n $new ]] && hyprctl dispatch "hl.dsp.window.move({ window = \"address:$new\", workspace = \"$1\", follow = false })"

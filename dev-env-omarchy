@@ -119,7 +119,9 @@ update_files $DEV_ENV/claude/skills $HOME/.claude/skills
 mkdir -p $HOME/.config/omarchy
 update_files $DEV_ENV/omarchy $HOME/.config/omarchy
 
-# hyprland (Omarchy 4 Lua configs; hyprland.lua/autostart.lua stay Omarchy-managed)
+# hyprland (Omarchy 4 Lua configs; autostart.lua stays Omarchy-managed)
+copy $DEV_ENV/hypr/hyprland.lua $HOME/.config/hypr/hyprland.lua
+copy $DEV_ENV/hypr/windows.lua $HOME/.config/hypr/windows.lua
 copy $DEV_ENV/key-mapping/input.lua $HOME/.config/hypr/input.lua
 copy $DEV_ENV/hypr/bindings.lua $HOME/.config/hypr/bindings.lua
 copy $DEV_ENV/hypr/monitors.lua $HOME/.config/hypr/monitors.lua
