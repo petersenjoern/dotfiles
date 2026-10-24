@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Open the tmux sessionizer in the terminal tmux is attached to, or in a new
+# terminal when no client is attached.
+
+dir=$(dirname "$0")
+
+if "$dir/tmux-focus"; then
+    tmux display-popup -E "$dir/tmux-sessionizer"
+else
+    omarchy-launch-terminal "$dir/tmux-sessionizer"
+fi

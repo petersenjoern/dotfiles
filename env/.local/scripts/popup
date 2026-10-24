@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: popup <name> <class-regex> <command>
+# Show or hide an app in its own special workspace, launching it there first
+# if no window matches.
+
+name=$1 class=$2
+win=$(hyprctl clients -j | jq -r --arg c "$class" 'first(.[] | select(.class | test($c))) | "\(.address) \(.workspace.name)"')
+
+if [[ -z $win ]]; then
+    "$(dirname "$0")/hypr-launch-to" "special:$name" "$3"
+elif [[ ${win#* } != "special:$name" ]]; then
+    hyprctl dispatch "hl.dsp.window.move({ window = \"address:${win%% *}\", workspace = \"special:$name\", follow = false })"
+fi
+
+hyprctl dispatch "hl.dsp.workspace.toggle_special(\"$name\")"
