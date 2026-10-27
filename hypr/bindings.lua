@@ -14,8 +14,6 @@ rebind("SUPER + SHIFT + F", "File manager", { launch = "nautilus --new-window" }
 rebind("SUPER + ALT + SHIFT + F", "File manager (cwd)", 'uwsm-app -- nautilus --new-window "$(omarchy-cmd-terminal-cwd)"')
 rebind("SUPER + SHIFT + B", "Browser", "omarchy-launch-browser")
 rebind("SUPER + SHIFT + ALT + B", "Browser (private)", "omarchy-launch-browser --private")
-rebind("SUPER + SHIFT + N", "Editor", "omarchy-launch-editor")
-rebind("SUPER + SHIFT + D", "Docker", { tui = "lazydocker" })
 -- Class is org.telegram.desktop; omarchy-launch-or-focus matches \bpattern\b
 -- case-insensitively against class or title, so the bare word is enough.
 rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
@@ -23,16 +21,16 @@ rebind("SUPER + SHIFT + W", "Workspace layout", "$HOME/.local/scripts/workspace-
 rebind("SUPER + SHIFT + P", "Tmux project", "$HOME/.local/scripts/tmux-project")
 rebind("SUPER + SHIFT + M", "Next waiting Claude", "$HOME/.local/scripts/claude-next")
 
--- Pop-ups: each app lives in its own special workspace
-rebind("SUPER + SHIFT + SLASH", "Passwords", "$HOME/.local/scripts/popup 1password '^com.onepassword.OnePassword$' 'uwsm-app -- 1password'")
-rebind("SUPER + SHIFT + L", "Discord", "$HOME/.local/scripts/popup discord '^chrome-discord.com__' 'omarchy-launch-webapp https://discord.com/channels/@me'")
--- Straight to the client: app.slack.com/'s Launch button opens a tab in the main browser
-rebind("SUPER + SHIFT + S", "Slack", "$HOME/.local/scripts/popup slack '^chrome-app.slack.com__' 'omarchy-launch-webapp https://app.slack.com/client/T08N66L1N84'")
-rebind("SUPER + SHIFT + K", "Notion", "$HOME/.local/scripts/popup notion '^chrome-app.notion.com__' 'omarchy-launch-webapp \"https://app.notion.com/p/2b686ca41a59802fa493f3f7874d0c37?v=3c986ca41a598012a3a8000c4573cbc8\"'")
-rebind("SUPER + SHIFT + C", "Calendar", "$HOME/.local/scripts/popup calendar '^chrome-calendar.google.com__' 'omarchy-launch-webapp https://calendar.google.com'")
-rebind("SUPER + SHIFT + E", "Email", "$HOME/.local/scripts/popup email '^chrome-mail.google.com__' 'omarchy-launch-webapp https://mail.google.com'")
-rebind("SUPER + SHIFT + T", "Activity", "$HOME/.local/scripts/popup activity '^org.omarchy.btop$' 'omarchy-launch-tui btop'")
-rebind("SUPER + SHIFT + G", "Signal", "$HOME/.local/scripts/popup signal '^signal$' 'uwsm-app -- signal-desktop'")
+-- Pop-ups: each app lives in its own special workspace (apps defined in the popup script)
+rebind("SUPER + SHIFT + SLASH", "Passwords", "$HOME/.local/scripts/popup 1password")
+rebind("SUPER + SHIFT + L", "Discord", "$HOME/.local/scripts/popup discord")
+rebind("SUPER + SHIFT + S", "Slack", "$HOME/.local/scripts/popup slack")
+rebind("SUPER + SHIFT + K", "Notion", "$HOME/.local/scripts/popup notion")
+rebind("SUPER + SHIFT + C", "Calendar", "$HOME/.local/scripts/popup calendar")
+rebind("SUPER + SHIFT + E", "Email", "$HOME/.local/scripts/popup email")
+rebind("SUPER + SHIFT + T", "Activity", "$HOME/.local/scripts/popup activity")
+rebind("SUPER + SHIFT + G", "Signal", "$HOME/.local/scripts/popup signal")
+rebind("SUPER + SHIFT + N", "Todo", "$HOME/.local/scripts/popup todo")
 
 -- Web apps
 rebind("SUPER + SHIFT + A", "Claude", { webapp = "https://claude.ai" })
@@ -47,6 +45,7 @@ for _, keys in ipairs({
   "SUPER + SHIFT + ALT + E", -- New email (HEY)
   "SUPER + SHIFT + CTRL + G", -- Messenger (Google)
   "SUPER + SHIFT + O", -- Obsidian
+  "SUPER + SHIFT + D", -- Docker (lazydocker)
 }) do
   hl.unbind(keys)
 end

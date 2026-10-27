@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 # Usage: workspace-layout [work|focus]
-# Open a fixed workspace layout (SUPER+SHIFT+W opens "work"). Workspaces that
-# already hold a window are skipped, so rerunning only fills the gaps.
+# Open a fixed workspace layout (runs at login; SUPER+SHIFT+W reruns "work").
+# Workspaces that already hold a window are skipped, so rerunning only fills
+# the gaps. Pop-ups and scratchpads start hidden in their special workspaces.
+
+scratchpads=(
+    "special:scratchpad|uwsm-app -- ghostty"
+    "special:scratchpad2|uwsm-app -- ghostty"
+)
 
 case ${1:-work} in
 work)
@@ -11,14 +17,18 @@ work)
         "3|omarchy-launch-webapp https://github.com/"
         "8|omarchy-launch-webapp https://claude.ai"
         "9|uwsm-app -- nautilus --new-window"
+        "${scratchpads[@]}"
     )
+    popups=(1password discord slack notion calendar email activity signal todo)
     ;;
 focus)
     layout=(
         "1|uwsm-app -- google-chrome-stable --new-window https://www.google.com"
         "2|omarchy-launch-terminal bash -c 'tmux attach || tmux'"
         "8|omarchy-launch-webapp https://claude.ai"
+        "${scratchpads[@]}"
     )
+    popups=()
     ;;
 *)
     echo "usage: workspace-layout [work|focus]" >&2
@@ -30,4 +40,8 @@ for entry in "${layout[@]}"; do
     ws=${entry%%|*}
     hyprctl clients -j | jq -e --arg ws "$ws" 'any(.[]; .workspace.name == $ws)' >/dev/null ||
         "$(dirname "$0")/hypr-launch-to" "$ws" "${entry#*|}"
+done
+
+for name in "${popups[@]}"; do
+    "$(dirname "$0")/popup" "$name" --preload
 done

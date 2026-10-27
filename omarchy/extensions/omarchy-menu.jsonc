@@ -29,6 +29,6 @@
   // "about": {"icon":"","label":"About","action":"omarchy-launch-or-focus-tui \"zsh -c 'fastfetch; read -k 1'\""},
 
   "layouts": {"icon":"󰕰","label":"Layouts","aliases":["layouts"]},
-  "layouts.work": {"icon":"󰃖","label":"Work","description":"Chrome, tmux, GitHub, btop, Claude, Nautilus; Discord and 1Password pop-ups","action":"~/.local/scripts/workspace-layout work"},
-  "layouts.focus": {"icon":"󰓾","label":"Focus","description":"Chrome, tmux, Claude; 1Password pop-up","action":"~/.local/scripts/workspace-layout focus"},
+  "layouts.work": {"icon":"󰃖","label":"Work","description":"Chrome, tmux, GitHub, Claude, Nautilus; all pop-ups and both Ghostty scratchpads preloaded","action":"~/.local/scripts/workspace-layout work"},
+  "layouts.focus": {"icon":"󰓾","label":"Focus","description":"Chrome, tmux, Claude; both Ghostty scratchpads preloaded","action":"~/.local/scripts/workspace-layout focus"},
 }

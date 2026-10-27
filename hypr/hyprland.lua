@@ -28,3 +28,6 @@ require("default.hypr.toggles")
 
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
+
+-- Here rather than autostart.lua, which stays Omarchy-managed (see dev-env-omarchy).
+o.exec_on_start("$HOME/.local/scripts/workspace-layout")
