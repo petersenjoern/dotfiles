@@ -3,12 +3,17 @@
 # Show or hide an app in its own special workspace, launching it there first
 # if no window matches. --preload only launches it, hidden.
 
+# Hyprland doesn't run the shell profile, so load the gitignored per-machine values here
+for conf in "$HOME/repos/personal/dotfiles/dotfiles.local.conf" "$HOME/.dotfiles.local.conf"; do
+    [[ -f $conf ]] && source "$conf" && break
+done
+
 case $1 in
 1password) class='^com.onepassword.OnePassword$' cmd='uwsm-app -- 1password' ;;
 discord) class='^chrome-discord.com__' cmd='omarchy-launch-webapp https://discord.com/channels/@me' ;;
 # Straight to the client: app.slack.com/'s Launch button opens a tab in the main browser
-slack) class='^chrome-app.slack.com__' cmd='omarchy-launch-webapp https://app.slack.com/client/T08N66L1N84' ;;
-notion) class='^chrome-app.notion.com__' cmd='omarchy-launch-webapp "https://app.notion.com/p/2b686ca41a59802fa493f3f7874d0c37?v=3c986ca41a598012a3a8000c4573cbc8"' ;;
+slack) class='^chrome-app.slack.com__' cmd='omarchy-launch-webapp "${DOTFILES_SLACK_URL:-https://app.slack.com/client}"' ;;
+notion) class='^chrome-app.notion.com__' cmd='omarchy-launch-webapp "${DOTFILES_NOTION_URL:-https://app.notion.com}"' ;;
 calendar) class='^chrome-calendar.google.com__' cmd='omarchy-launch-webapp https://calendar.google.com' ;;
 email) class='^chrome-mail.google.com__' cmd='omarchy-launch-webapp https://mail.google.com' ;;
 activity) class='^org.omarchy.btop$' cmd='omarchy-launch-tui btop' ;;

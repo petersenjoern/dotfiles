@@ -9,3 +9,7 @@ export AWS_VAULT_FILE_PASSPHRASE=""
 # Tailnet domain (e.g. tail123abc.ts.net) — used in shell expansions like
 # `https://host.$REMOTE_TAILNET`. Find yours with `tailscale status --json | jq -r .MagicDNSSuffix`.
 export REMOTE_TAILNET=""
+
+# Pop-up web apps (SUPER+SHIFT+S / SUPER+SHIFT+K); empty falls back to the generic start page
+export DOTFILES_SLACK_URL=""   # e.g. https://app.slack.com/client/<workspace-id>
+export DOTFILES_NOTION_URL=""  # e.g. https://app.notion.com/p/<page-id>
