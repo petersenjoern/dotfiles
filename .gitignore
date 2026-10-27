@@ -8,6 +8,7 @@ logs/
 dotfiles.local.conf
 .claude/settings.local.json
 pi/agent/settings.local.json
+pi/agent/mcp.json
 env/.local/scripts/datakit
 __pycache__/
 .ruff_cache/
