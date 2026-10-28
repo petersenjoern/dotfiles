@@ -50,6 +50,10 @@ for _, keys in ipairs({
   hl.unbind(keys)
 end
 
+-- Bar panels without a default letter (Omarchy only gives them SUPER+CTRL+<position>)
+o.bind("SUPER + CTRL + M", "Agents (Claude usage)", "omarchy-shell shell toggle omarchy.agents")
+o.bind("SUPER + CTRL + U", "Tailscale", "omarchy-shell shell toggle omarchy.tailscale")
+
 -- Second scratchpad, mirroring Omarchy's SUPER+S / SUPER+ALT+S pair
 o.bind("SUPER + D", "Toggle scratchpad 2", hl.dsp.workspace.toggle_special("scratchpad2"))
 o.bind("SUPER + ALT + D", "Move window to scratchpad 2", hl.dsp.window.move({ workspace = "special:scratchpad2", follow = false }))
