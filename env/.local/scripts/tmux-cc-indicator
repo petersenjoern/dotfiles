@@ -3,6 +3,7 @@
 
 Called by tmux's #() format expansion:
     #(tmux-cc-indicator #{session_name}:#{window_index})
+    #(tmux-cc-indicator --all)    counts across every session, e.g. ⚠1 ⏳2 ✓5
 
 Reads per-pane state files from /tmp/claude-status/ and returns the
 worst-case icon across all panes in the given window.
@@ -15,6 +16,7 @@ from pathlib import Path
 STATUS_DIR = Path("/tmp/claude-status")
 PRIORITY = {"attention": 3, "working": 2, "idle": 1}
 ICONS = {"attention": " \u26a0", "working": " \u23f3", "idle": " \u2713"}
+COLORS = {"attention": "red", "working": "yellow", "idle": "green"}
 
 
 def get_pane_ids(window_target: str) -> list[str]:
@@ -45,8 +47,35 @@ def worst_state(pane_ids: list[str]) -> str:
     return worst
 
 
+def all_counts() -> str:
+    # Only panes running claude: state files outlive their panes.
+    result = subprocess.run(
+        ["tmux", "list-panes", "-a", "-F", "#{pane_id} #{pane_current_command}"],
+        capture_output=True,
+        text=True,
+    )
+    counts = dict.fromkeys(PRIORITY, 0)
+    for line in result.stdout.splitlines():
+        pane_id, _, command = line.partition(" ")
+        state_file = STATUS_DIR / pane_id
+        if command != "claude" or not state_file.is_file():
+            continue
+        state = state_file.read_text().strip()
+        if state in counts:
+            counts[state] += 1
+    return " ".join(
+        f"#[fg={COLORS[state]}]{ICONS[state].strip()}{n}"
+        for state in sorted(counts, key=PRIORITY.get, reverse=True)
+        if (n := counts[state])
+    )
+
+
 def main() -> None:
     if len(sys.argv) < 2:
+        return
+
+    if sys.argv[1] == "--all":
+        print(all_counts(), end="")
         return
 
     pane_ids = get_pane_ids(sys.argv[1])
