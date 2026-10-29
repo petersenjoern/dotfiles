@@ -61,7 +61,6 @@ exactly as before. It exits silently when `TMUX_PANE` is unset.
   "pane_pid": 12345,
   "transcript_path": "/home/joern/.claude/projects/…/1c443f7e-….jsonl",
   "session_title": "Trialcore turbopuffer filter opportunities",
-  "first_prompt": "…",
   "last_prompt": "…",
   "last_prompt_at": "2026-10-28T12:52:09Z",
   "cwds": ["/home/joern/repos/work/amass/.worktrees/wt-3", "…/.claude/worktrees/exp-x"],
@@ -83,14 +82,15 @@ exactly as before. It exits silently when `TMUX_PANE` is unset.
   - Take `session_title` from the payload when present.
 - **Meaningful prompts.** On `UserPromptSubmit`, the prompt counts only when
   all three hold:
-  - `source` is absent or `user`, so loop, schedule, poll and system ticks
-    don't count.
+  - `source` is absent or `user`, and the prompt doesn't start with `<`, so
+    loop, schedule, poll and system ticks don't count. `source` is still
+    rolling out, so an injected `<task-notification>` can arrive without it.
   - It is at least 20 characters long. That alone filters bare confirmations
     such as `yes`, `go` and `yes to all`. A list of exact confirmation words
     would add nothing.
 
-  A meaningful prompt becomes `last_prompt`. The first one becomes
-  `first_prompt`. `last_prompt_at` updates on every prompt.
+  A meaningful prompt becomes `last_prompt`. `last_prompt_at` updates on
+  every prompt.
 - **On `Stop`:** `crons = len(session_crons or [])`.
 - **On `SessionStart`:** record `session_id`, `transcript_path` and
   `session_title`.
@@ -209,7 +209,15 @@ dotfiles ───────────────────────�
 **Line format.** Each line is `target \t visible \t blob \t url`:
 - `target`: a pane id to jump to, or `wt:<path>` / `br:<repo>:<branch>`
   for preview-only rows, or empty for headers
-- `blob`: first and last prompts, all branches, PR titles, worktree paths
+- `blob`: session title, all branches, `#number title` of every PR the
+  session touched (including merged ones hidden from the list), worktree
+  paths. Prompts were dropped: they mention other worktrees and PRs in
+  passing, so "wt-9" also hit any session that talked about wt-9. All rows of
+  a session share its blob, so a hit shows the session with its children.
+
+fzf runs with `--exact` (substring matching; a `'` prefix makes one term
+fuzzy). Fuzzy matching hit almost every row, because a few characters in
+order turn up somewhere in a long blob.
 - `url`: the row's PR, empty when it has none. It isn't displayed; `{4}`
   reads it.
 

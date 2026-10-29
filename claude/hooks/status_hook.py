@@ -84,8 +84,10 @@ def update_record(pane: str, payload: dict) -> None:
         record["last_prompt_at"] = datetime.now(timezone.utc).isoformat()
         prompt = " ".join(payload.get("prompt", "").split())[:MAX_PROMPT_LEN]
         # Loop, schedule and system ticks must not overwrite what you asked for.
-        if payload.get("source") in (None, "user") and len(prompt) >= MIN_PROMPT_LEN:
-            record.setdefault("first_prompt", prompt)
+        # `source` is still rolling out, so injected <task-notification> and
+        # similar tags also arrive without it.
+        typed = payload.get("source") in (None, "user") and not prompt.startswith("<")
+        if typed and len(prompt) >= MIN_PROMPT_LEN:
             record["last_prompt"] = prompt
     elif event == "Stop":
         record["crons"] = len(payload.get("session_crons") or [])

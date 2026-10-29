@@ -685,13 +685,17 @@ def render(repos: list[dict], cols: int) -> list[tuple[str, str, str, str]]:
                 icon, state_color, _ = STATES.get(rec.get("state", ""), ("  ", "", ""))
                 live_branch = s["live_wt"]["branch"] if s["live_wt"] else None
                 children = session_children(s, srepo, repos)
+                # No prompts: they mention other worktrees and PRs in passing,
+                # so searching "wt-9" would also hit whoever talked about it.
                 blob = " ".join(
                     [
                         s["title"],
-                        rec.get("first_prompt", ""),
-                        rec.get("last_prompt", ""),
                         *[c[1] for c in children],
-                        *[c[2]["title"] for c in children if c[2]],
+                        *[
+                            f"#{c[2]['number']} {c[2]['title']}"
+                            for c in children
+                            if c[2]
+                        ],
                         *[wt["path"] for _, wt in s["worktrees"]],
                     ]
                 )
@@ -906,6 +910,7 @@ def popup(include_all: bool) -> None:
         "--reverse",
         "--no-sort",
         "--no-hscroll",
+        "--exact",
         "--ellipsis=",
         "--delimiter=\t",
         "--with-nth=2,3",
