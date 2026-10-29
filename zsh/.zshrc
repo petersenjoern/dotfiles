@@ -49,7 +49,7 @@ zstyle ':omz:update' frequency 13
 # DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
-ENABLE_CORRECTION="true"
+ENABLE_CORRECTION="false"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 # You can also set it to another string to have that shown instead of the default red dots.
@@ -122,6 +122,7 @@ setopt SHARE_HISTORY         # Share history between sessions
 setopt HIST_IGNORE_SPACE     # Space-prefixed commands excluded from history
 setopt APPEND_HISTORY        # Append to history file
 setopt INC_APPEND_HISTORY    # Add commands immediately
+unsetopt CORRECT CORRECT_ALL # Spelling prompts misfire on args like `env` next to `.env`
 
 
 # histfile
@@ -256,3 +257,11 @@ _ts_host_widget() {
 }
 zle -N _ts_host_widget
 bindkey '^[t' _ts_host_widget
+
+# Strip leading whitespace when pasting into an empty prompt, so commands copied
+# from indented output (e.g. Claude Code) aren't hidden by HIST_IGNORE_SPACE.
+_paste_strip_leading_space() {
+    [[ -z $BUFFER ]] && PASTED=${PASTED#"${PASTED%%[![:space:]]*}"}
+    return 0
+}
+zstyle :bracketed-paste-magic paste-finish _paste_strip_leading_space
