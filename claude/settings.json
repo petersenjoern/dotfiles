@@ -131,13 +131,35 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py prompt"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/status_hook.py start"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "test -n \"$TMUX_PANE\" && rm -f \"/tmp/claude-status/$TMUX_PANE\"; true"
+            "command": "test -n \"$TMUX_PANE\" && rm -f \"/tmp/claude-status/$TMUX_PANE\" \"/tmp/claude-status/$TMUX_PANE.json\" && tmux set -p -u -t \"$TMUX_PANE\" @cc_title; true"
           }
         ]
       }

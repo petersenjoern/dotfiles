@@ -1,0 +1,969 @@
+#!/usr/bin/env python3
+"""tmux-map: every Claude session, worktree, branch and PR across tmux, in one view.
+
+    tmux-map                  fzf popup (prefix+t); Enter jumps to the pane
+    tmux-map --dump [--all]   print the tree without fzf
+    tmux-map --lines [--all]  fzf input, used by reload
+    tmux-map --preview T      preview for a line's target
+
+Stateless: tmux, git, Claude Code's ~/.claude/sessions and transcripts, the
+status_hook.py records in /tmp/claude-status and `gh pr list` are read on
+every open. Only gh results (60s) and transcript scan offsets are cached,
+under $XDG_CACHE_HOME/tmux-map.
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+import unicodedata
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from pathlib import Path
+
+STATUS_DIR = Path("/tmp/claude-status")
+CLAUDE_DIR = Path.home() / ".claude"
+CACHE_DIR = (
+    Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "tmux-map"
+)
+SCRIPT = os.path.abspath(__file__)
+PR_TTL = 60
+GH_TIMEOUT = 5
+# ANSI 0-15 only: Omarchy themes rewrite those, so the map follows the theme.
+DIM, BOLD, RESET = "\033[2m", "\033[1m", "\033[0m"
+RED, GREEN, YELLOW, CYAN = "\033[31m", "\033[32m", "\033[33m", "\033[36m"
+# icon (fixed two cells so rows stay aligned), color, words
+STATES = {
+    "attention": ("⚠ ", RED, "needs you"),
+    "working": ("⏳", YELLOW, "working"),
+    "idle": ("✓ ", GREEN, "done"),
+}
+LOOP_ICON = "🔁"
+# symbol, color, words for a PR's CI checks
+CHECKS = {
+    "pass": ("✓", GREEN, "checks pass"),
+    "fail": ("✗", RED, "checks failing"),
+    "pending": ("●", YELLOW, "checks running"),
+}
+CHECK_FAILURES = {
+    "FAILURE",
+    "ERROR",
+    "CANCELLED",
+    "TIMED_OUT",
+    "ACTION_REQUIRED",
+    "STARTUP_FAILURE",
+}
+CHECK_PASSES = {"SUCCESS", "NEUTRAL", "SKIPPED"}
+GITHUB_APP_CLASS = "chrome-github.com__"
+GITHUB_WORKSPACE = "3"
+PANE_FIELDS = (
+    "pane_id",
+    "pane_pid",
+    "pane_current_command",
+    "pane_current_path",
+    "session_name",
+    "window_index",
+    "window_name",
+    "pane_active",
+    "@wt_color",
+)
+
+
+def run(*cmd: str, cwd: str | None = None, timeout: float | None = None) -> str | None:
+    """Run a command; stripped stdout, or None when it fails."""
+    try:
+        r = subprocess.run(
+            cmd, capture_output=True, text=True, cwd=cwd, timeout=timeout
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def read_json(path: Path) -> dict | None:
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+
+
+def write_atomic(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(data))
+    os.replace(tmp, path)
+
+
+def cache_file(kind: str, key: str) -> Path:
+    return CACHE_DIR / kind / f"{hashlib.sha1(key.encode()).hexdigest()}.json"
+
+
+def width(s: str) -> int:
+    return sum(
+        0
+        if unicodedata.combining(c)
+        else 2
+        if unicodedata.east_asian_width(c) in "WF"
+        else 1
+        for c in s
+    )
+
+
+def fit(s: str, w: int) -> str:
+    """Truncate to w display cells (with …) and pad to exactly w."""
+    if width(s) > w:
+        while s and width(s) > w - 1:
+            s = s[:-1]
+        s += "…"
+    return s + " " * max(0, w - width(s))
+
+
+def paint(s: str, color: str) -> str:
+    return f"{color}{s}{RESET}" if color else s
+
+
+def clock(ts: float | None) -> str:
+    if ts is None:
+        return ""
+    t = datetime.fromtimestamp(ts)
+    return t.strftime("%H:%M" if t.date() == datetime.now().date() else "%b %d %H:%M")
+
+
+def age(ts: float | None) -> str:
+    if ts is None:
+        return ""
+    secs = max(0, time.time() - ts)
+    for unit, size in (("d", 86400), ("h", 3600), ("m", 60)):
+        if secs >= size:
+            return f"{int(secs // size)}{unit}"
+    return "now"
+
+
+def iso_ts(iso: str | None) -> float | None:
+    try:
+        return datetime.fromisoformat((iso or "").replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def list_panes() -> list[dict]:
+    fmt = "\t".join(f"#{{{f}}}" for f in PANE_FIELDS)
+    out = run("tmux", "list-panes", "-a", "-F", fmt) or ""
+    rows = [line.split("\t") for line in out.splitlines()]
+    return [dict(zip(PANE_FIELDS, r)) for r in rows if len(r) == len(PANE_FIELDS)]
+
+
+def claude_processes() -> dict[str, dict]:
+    """Running Claude Code sessions by tmux pane id, from ~/.claude/sessions/<pid>.json.
+
+    Claude Code writes these itself, so sessions started before status_hook.py
+    recorded anything still get their transcript (and title).
+    """
+    found = {}
+    for f in (CLAUDE_DIR / "sessions").glob("*.json"):
+        info = read_json(f)
+        if not info or not info.get("tmux"):
+            continue
+        # Files of exited sessions linger; only a live pid counts.
+        try:
+            os.kill(info["pid"], 0)
+        except OSError:
+            continue
+        found[info["tmux"].rpartition(".")[2]] = info
+    return found
+
+
+def load_sessions(panes: list[dict]) -> dict[str, dict]:
+    """Claude record per pane running claude; drop records of panes that are gone."""
+    live = {p["pane_id"] for p in panes}
+    for f in STATUS_DIR.glob("*.json"):
+        if f.stem not in live:
+            f.unlink(missing_ok=True)
+
+    processes = claude_processes()
+    sessions = {}
+    for p in panes:
+        if p["pane_current_command"] != "claude":
+            continue
+        record = read_json(STATUS_DIR / f"{p['pane_id']}.json") or {}
+        # A pane id reused after a tmux restart must not inherit a dead session.
+        if str(record.get("pane_pid")) != p["pane_pid"]:
+            record = {}
+        proc = processes.get(p["pane_id"])
+        if not record.get("transcript_path") and proc and proc.get("sessionId"):
+            transcripts = (CLAUDE_DIR / "projects").glob(f"*/{proc['sessionId']}.jsonl")
+            record["transcript_path"] = next(map(str, transcripts), None)
+        state_file = STATUS_DIR / p["pane_id"]
+        if state_file.is_file():
+            record["state"] = state_file.read_text().strip()
+            record["state_at"] = state_file.stat().st_mtime
+        sessions[p["pane_id"]] = record
+    return sessions
+
+
+def repo_root(path: str, cache: dict[str, str | None]) -> str | None:
+    """Main checkout of the repo containing path, also from inside a worktree."""
+    if path not in cache:
+        common = run(
+            "git", "-C", path, "rev-parse", "--path-format=absolute", "--git-common-dir"
+        )
+        cache[path] = str(Path(common).parent) if common else None
+    return cache[path]
+
+
+def list_worktrees(repo: str) -> list[dict]:
+    out = run("git", "-C", repo, "worktree", "list", "--porcelain") or ""
+    worktrees = []
+    for block in out.split("\n\n"):
+        wt: dict = {"branch": None}
+        for line in block.splitlines():
+            key, _, val = line.partition(" ")
+            if key == "worktree":
+                wt["path"] = val
+            elif key == "branch":
+                wt["branch"] = val.removeprefix("refs/heads/")
+        if wt.get("path") and Path(wt["path"]).is_dir():
+            worktrees.append(wt)
+    return worktrees
+
+
+def short_name(repo: str, wt_path: str) -> str:
+    rel = os.path.relpath(wt_path, repo)
+    return "(main)" if rel == "." else rel.removeprefix(".worktrees/")
+
+
+def scan_transcript(path: str) -> dict:
+    """Titles and PR links from a transcript, reading only bytes added since last time."""
+    cf = cache_file("transcripts", path)
+    info = read_json(cf) or {"offset": 0, "prs": []}
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return info
+    if size == info["offset"]:
+        return info
+
+    with open(path, "rb") as f:
+        f.seek(info["offset"])
+        chunk = f.read()
+    # Leave a half-written last line for the next scan.
+    end = chunk.rfind(b"\n") + 1
+    for line in chunk[:end].splitlines():
+        if b'-title"' not in line and b'"pr-link"' not in line:
+            continue
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        kind = entry.get("type")
+        if kind == "custom-title":
+            info["custom_title"] = entry.get("customTitle")
+        elif kind == "ai-title":
+            info["ai_title"] = entry.get("aiTitle")
+        elif kind == "pr-link" and entry.get("prNumber") not in info["prs"]:
+            info["prs"].append(entry["prNumber"])
+    info["offset"] += end
+    write_atomic(cf, info)
+    return info
+
+
+def typed_prompt(entry: dict) -> str | None:
+    """Text of a prompt you typed; None for tool results, loop ticks, notifications."""
+    if entry.get("type") != "user" or entry.get("isMeta"):
+        return None
+    if entry.get("turnOrigin", "human") != "human":
+        return None
+    content = entry.get("message", {}).get("content")
+    if isinstance(content, list):
+        if any(b.get("type") == "tool_result" for b in content):
+            return None
+        content = " ".join(
+            b.get("text", "") for b in content if b.get("type") == "text"
+        )
+    if not isinstance(content, str) or not content.strip():
+        return None
+    # Slash commands are stored as <command-name>/x</command-name><command-args>…
+    command = re.search(r"<command-name>(.*?)</command-name>", content)
+    if command:
+        args = re.search(r"<command-args>(.*?)</command-args>", content, re.S)
+        return f"{command.group(1)} {args.group(1) if args else ''}".strip()
+    return None if content.lstrip().startswith("<") else content.strip()
+
+
+def last_exchange(path: str | None) -> tuple[tuple | None, tuple | None]:
+    """((prompt, ts), (reply, ts)): your last typed prompt and Claude's last text."""
+    prompt = reply = None
+    try:
+        with open(path or "", "rb") as f:
+            f.seek(max(0, os.path.getsize(path or "") - 2_000_000))
+            lines = f.read().splitlines()
+    except OSError:
+        return None, None
+    for line in reversed(lines):
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        ts = iso_ts(entry.get("timestamp"))
+        if reply is None and entry.get("type") == "assistant":
+            content = entry["message"]["content"]
+            text = "\n".join(b["text"] for b in content if b["type"] == "text")
+            if text.strip():
+                reply = (text.strip(), ts)
+        if prompt is None and (text := typed_prompt(entry)):
+            prompt = (text, ts)
+        if prompt and reply:
+            break
+    return prompt, reply
+
+
+def gh_list(repo: str, state: str, limit: int, fields: str) -> list[dict] | None:
+    out = run(
+        "gh",
+        "pr",
+        "list",
+        "--author",
+        "@me",
+        "--state",
+        state,
+        "--limit",
+        str(limit),
+        "--json",
+        fields,
+        cwd=repo,
+        timeout=GH_TIMEOUT,
+    )
+    try:
+        return json.loads(out) if out is not None else None
+    except ValueError:
+        return None
+
+
+def checks_summary(rollup: list[dict] | None) -> str | None:
+    """Collapse a PR's statusCheckRollup into pass / fail / pending."""
+    states = set()
+    for c in rollup or []:
+        if c.get("__typename") == "StatusContext":
+            states.add(c.get("state") or "PENDING")
+        else:
+            done = c.get("status") == "COMPLETED"
+            states.add((c.get("conclusion") if done else None) or "PENDING")
+    if not states:
+        return None
+    if states & CHECK_FAILURES:
+        return "fail"
+    if states - CHECK_PASSES:
+        return "pending"
+    return "pass"
+
+
+def fetch_prs(repo: str, fetch: bool) -> tuple[list[dict] | None, bool]:
+    """(prs, stale). prs is None when gh has never answered for this repo."""
+    cf = cache_file("prs", repo)
+    cached = read_json(cf)
+    if cached and (not fetch or time.time() - cached["fetched_at"] < PR_TTL):
+        return cached["prs"], False
+    if fetch:
+        # Checks for all 100 PRs take ~8s; for the few open ones ~1s, in parallel.
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            all_prs = pool.submit(
+                gh_list,
+                repo,
+                "all",
+                100,
+                "number,title,state,reviewDecision,headRefName,url",
+            )
+            open_prs = pool.submit(
+                gh_list, repo, "open", 30, "number,statusCheckRollup"
+            )
+            prs, checks = all_prs.result(), open_prs.result()
+        if prs is not None:
+            by_number = {
+                c["number"]: checks_summary(c.get("statusCheckRollup"))
+                for c in checks or []
+            }
+            for pr in prs:
+                pr["checks"] = by_number.get(pr["number"])
+            write_atomic(cf, {"fetched_at": time.time(), "prs": prs})
+            return prs, False
+    return (cached["prs"], True) if cached else (None, True)
+
+
+def collect(include_all: bool, fetch: bool) -> list[dict]:
+    """Repos in display order, each with its windows, loose branches and idle worktrees."""
+    panes = list_panes()
+    sessions = load_sessions(panes)
+    roots: dict[str, str | None] = {}
+
+    def locate(path: str) -> tuple[str | None, dict | None]:
+        repo = repo_root(path, roots)
+        if not repo:
+            return None, None
+        hits = [
+            wt
+            for wt in worktrees[repo]
+            if path == wt["path"] or path.startswith(wt["path"] + "/")
+        ]
+        return repo, max(hits, key=lambda wt: len(wt["path"]), default=None)
+
+    repo_order: list[str] = []
+    for path in [p["pane_current_path"] for p in panes] + [
+        c for rec in sessions.values() for c in rec.get("cwds", [])
+    ]:
+        repo = repo_root(path, roots)
+        if repo and repo not in repo_order:
+            repo_order.append(repo)
+    worktrees = {r: list_worktrees(r) for r in repo_order}
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        pr_results = dict(
+            zip(repo_order, pool.map(lambda r: fetch_prs(r, fetch), repo_order))
+        )
+        transcripts = dict(
+            zip(
+                sessions,
+                pool.map(
+                    lambda rec: scan_transcript(rec["transcript_path"])
+                    if rec.get("transcript_path")
+                    else {},
+                    sessions.values(),
+                ),
+            )
+        )
+
+    repos = {}
+    for r in repo_order:
+        prs, stale = pr_results[r]
+        # One PR per head branch: open wins, else the newest (gh lists newest first).
+        by_branch: dict[str, dict] = {}
+        for pr in prs or []:
+            cur = by_branch.get(pr["headRefName"])
+            if cur is None or (pr["state"] == "OPEN" and cur["state"] != "OPEN"):
+                by_branch[pr["headRefName"]] = pr
+        repos[r] = {
+            "path": r,
+            "name": Path(r).name,
+            "prs_known": prs is not None,
+            "prs_stale": stale,
+            "by_branch": by_branch,
+            "by_number": {pr["number"]: pr for pr in prs or []},
+            "branches": set(
+                (
+                    run(
+                        "git",
+                        "-C",
+                        r,
+                        "for-each-ref",
+                        "--format=%(refname:short)",
+                        "refs/heads",
+                    )
+                    or ""
+                ).splitlines()
+            ),
+            "windows": [],
+        }
+    no_repo = {
+        "path": "",
+        "name": "(no repo)",
+        "prs_known": True,
+        "prs_stale": False,
+        "by_branch": {},
+        "by_number": {},
+        "branches": set(),
+        "windows": [],
+    }
+
+    windows: dict[tuple[str, str], list[dict]] = {}
+    for p in panes:
+        windows.setdefault((p["session_name"], p["window_index"]), []).append(p)
+
+    used_paths: set[str] = set()
+    for (sess, idx), wpanes in windows.items():
+        claude_panes = [p for p in wpanes if p["pane_id"] in sessions]
+        active = next((p for p in wpanes if p["pane_active"] == "1"), wpanes[0])
+        window = {
+            "session": sess,
+            "index": idx,
+            "name": active["window_name"],
+            # @wt_color is the colourNNN tmux-worktree tints the tab with.
+            "color": re.sub(r"colou?r(\d+)", "\033[38;5;\\1m", active["@wt_color"]),
+            "active_pane": active["pane_id"],
+            "sessions": [],
+        }
+        for p in wpanes:
+            used_paths.add(p["pane_current_path"])
+
+        for p in claude_panes:
+            rec = sessions[p["pane_id"]]
+            cwds = rec.get("cwds") or [p["pane_current_path"]]
+            used_paths.update(cwds)
+            touched: list[tuple[str, dict]] = []
+            for cwd in cwds:
+                repo, wt = locate(cwd)
+                if wt and (repo, wt) not in touched:
+                    touched.append((repo, wt))
+            live_repo, live_wt = locate(cwds[-1])
+            transcript = transcripts.get(p["pane_id"], {})
+            window["sessions"].append(
+                {
+                    "pane": p,
+                    "record": rec,
+                    "title": transcript.get("custom_title")
+                    or transcript.get("ai_title")
+                    or rec.get("session_title")
+                    or rec.get("last_prompt")
+                    or "(untitled)",
+                    "pr_links": transcript.get("prs", []),
+                    "repo": live_repo,
+                    "live_wt": live_wt,
+                    "worktrees": touched,
+                }
+            )
+
+        if window["sessions"]:
+            home = repos.get(window["sessions"][0]["repo"], no_repo)
+        else:
+            anchor = next(
+                (
+                    p
+                    for p in [active, *wpanes]
+                    if repo_root(p["pane_current_path"], roots)
+                ),
+                None,
+            )
+            if not anchor:
+                continue
+            repo, wt = locate(anchor["pane_current_path"])
+            # Utility windows (nvim, services, notes) live in the main checkout.
+            if not wt or wt["path"] == repo:
+                continue
+            window["worktree"] = wt
+            home = repos[repo]
+        home["windows"].append(window)
+
+    for repo in repos.values():
+        checked_out = {wt["branch"] for wt in worktrees[repo["path"]]}
+        repo["loose"] = sorted(
+            b
+            for b, pr in repo["by_branch"].items()
+            if pr["state"] == "OPEN" and b in repo["branches"] and b not in checked_out
+        )
+        repo["idle_worktrees"] = [
+            wt
+            for wt in worktrees[repo["path"]]
+            if include_all
+            and not any(
+                u == wt["path"] or u.startswith(wt["path"] + "/") for u in used_paths
+            )
+        ]
+
+    result = [
+        r for r in repos.values() if r["windows"] or r["loose"] or r["idle_worktrees"]
+    ]
+    if no_repo["windows"]:
+        result.append(no_repo)
+    return result
+
+
+def pr_status(repo: dict, pr: dict | None) -> tuple[str, str, bool]:
+    """(text, color, finished) for a PR cell; finished means merged or closed."""
+    if pr is None:
+        return ("—" if repo["prs_known"] else "?"), DIM, False
+    num = f"#{pr['number']}"
+    if pr["state"] == "MERGED":
+        return f"{num} merged ↺", DIM, True
+    if pr["state"] == "CLOSED":
+        return f"{num} closed ↺", DIM, True
+    review = pr.get("reviewDecision") or ""
+    if review == "APPROVED":
+        return f"{num} approved", GREEN, False
+    if review == "CHANGES_REQUESTED":
+        return f"{num} changes requested", RED, False
+    if review == "REVIEW_REQUIRED":
+        return f"{num} needs review", YELLOW, False
+    return f"{num} open", "", False
+
+
+def session_children(s: dict, srepo: dict, repos: list[dict]) -> list[tuple]:
+    """(worktree name, branch, pr, repo) per worktree/branch/PR the session touched."""
+    rec = s["record"]
+    children: list[tuple] = []
+    shown: set[str | None] = set()
+    for wrepo, wt in s["worktrees"]:
+        r = next((x for x in repos if x["path"] == wrepo), srepo)
+        name = short_name(wrepo, wt["path"])
+        if wrepo != s["repo"]:
+            name = f"{r['name']}/{name}"
+        children.append(
+            (
+                name,
+                wt["branch"] or "(detached)",
+                r["by_branch"].get(wt["branch"] or ""),
+                r,
+            )
+        )
+        shown.add(wt["branch"])
+    for b in rec.get("branches", []):
+        if b and b not in shown and b in srepo["branches"]:
+            children.append(("", b, srepo["by_branch"].get(b), srepo))
+            shown.add(b)
+    for n in s["pr_links"]:
+        linked = srepo["by_number"].get(n)
+        if linked and linked["headRefName"] not in shown:
+            children.append(("", linked["headRefName"], linked, srepo))
+            shown.add(linked["headRefName"])
+    # Worktrees first, then the history newest PR first; branches without a PR last.
+    worktree_rows = [c for c in children if c[0]]
+    history = sorted(
+        (c for c in children if not c[0]),
+        key=lambda c: -(c[2]["number"] if c[2] else 0),
+    )
+    return worktree_rows + history
+
+
+def render(repos: list[dict], cols: int) -> list[tuple[str, str, str, str]]:
+    """(target, visible, search blob, PR url) per line."""
+    head_w, mark_w, pr_w = 20, 10, 24
+    lead = head_w + mark_w
+    label_w = max(20, cols - lead - pr_w - 1)
+    wt_w = min(26, label_w // 2)
+    lines: list[tuple[str, str, str, str]] = []
+
+    def row(
+        target: str,
+        cells: list[tuple[str, int, str]],
+        blob: str,
+        repo: dict,
+        pr: dict | None,
+        dim: bool | None = None,
+    ) -> None:
+        """cells are (text, width, color) before the PR column. A dim row drops
+        colors and fades whole; by default rows fade once their PR is finished."""
+        text, color, done = pr_status(repo, pr)
+        sym, check_color, _ = CHECKS.get((pr or {}).get("checks") or "", ("", "", ""))
+        cells = [*cells, (" ", 1, ""), (sym, 2, check_color), (text, pr_w - 2, color)]
+        if done if dim is None else dim:
+            visible = paint("".join(fit(t, w) for t, w, _ in cells), DIM)
+        else:
+            visible = "".join(paint(fit(t, w), c) for t, w, c in cells)
+        url = (pr or {}).get("url", "")
+        lines.append((target, visible, blob.replace("\t", " "), url))
+
+    for repo in repos:
+        shown_branches: set[str] = set()
+        header = repo["name"] + (" (PRs stale)" if repo["prs_stale"] else "")
+        lines.append(("", paint(fit(header + " " + "─" * cols, cols), BOLD), "", ""))
+
+        for window in repo["windows"]:
+            # The repo header already names the session in the usual one-session-per-repo case.
+            win = window["index"]
+            if window["session"] != repo["name"]:
+                win = f"{window['session']}:{win}"
+            head = (f"{win:>3} {window['name']}", head_w, window["color"])
+
+            if not window["sessions"]:
+                wt = window["worktree"]
+                branch = wt["branch"] or "(detached)"
+                name = short_name(repo["path"], wt["path"])
+                row(
+                    window["active_pane"],
+                    [head, ("", mark_w, ""), (f"{name} · {branch}", label_w, "")],
+                    f"{window['name']} {name} {branch} {wt['path']}",
+                    repo,
+                    repo["by_branch"].get(wt["branch"] or ""),
+                )
+                continue
+
+            for i, s in enumerate(window["sessions"]):
+                rec, target = s["record"], s["pane"]["pane_id"]
+                srepo = next((r for r in repos if r["path"] == s["repo"]), repo)
+                icon, state_color, _ = STATES.get(rec.get("state", ""), ("  ", "", ""))
+                live_branch = s["live_wt"]["branch"] if s["live_wt"] else None
+                children = session_children(s, srepo, repos)
+                # No prompts: they mention other worktrees and PRs in passing,
+                # so searching "wt-9" would also hit whoever talked about it.
+                blob = " ".join(
+                    [
+                        s["title"],
+                        *[c[1] for c in children],
+                        *[
+                            f"#{c[2]['number']} {c[2]['title']}"
+                            for c in children
+                            if c[2]
+                        ],
+                        *[wt["path"] for _, wt in s["worktrees"]],
+                    ]
+                )
+                attention = rec.get("state") == "attention"
+                row(
+                    target,
+                    [
+                        head if i == 0 else ("", head_w, ""),
+                        (icon, 2, state_color),
+                        (" " + (LOOP_ICON if rec.get("crons") else ""), 3, ""),
+                        (f"{age(rec.get('state_at')):>4} ", mark_w - 5, DIM),
+                        (s["title"], label_w, BOLD + RED if attention else ""),
+                    ],
+                    blob,
+                    srepo,
+                    srepo["by_branch"].get(live_branch or ""),
+                    dim=False,
+                )
+                for name, branch, cpr, r in children:
+                    # Long sessions cycle through many merged branches; those
+                    # stay in the preview, the list keeps worktrees and open work.
+                    if not name and pr_status(r, cpr)[2]:
+                        continue
+                    shown_branches.add(branch)
+                    row(
+                        target,
+                        [
+                            ("", lead, ""),
+                            (f"└ {name}", wt_w + 2, DIM),
+                            (branch, label_w - wt_w - 2, ""),
+                        ],
+                        blob,
+                        r,
+                        cpr,
+                    )
+
+        for b in repo["loose"]:
+            if b in shown_branches:
+                continue
+            pr = repo["by_branch"][b]
+            row(
+                f"br:{repo['path']}:{b}",
+                [("    loose", head_w, DIM), (" ·", mark_w, DIM), (b, label_w, "")],
+                f"{b} {pr['title']}",
+                repo,
+                pr,
+            )
+        for wt in repo["idle_worktrees"]:
+            name = short_name(repo["path"], wt["path"])
+            row(
+                f"wt:{wt['path']}",
+                [
+                    ("    no window", lead, ""),
+                    (f"{name} · {wt['branch'] or '(detached)'}", label_w, ""),
+                ],
+                f"{name} {wt['branch']} {wt['path']}",
+                repo,
+                repo["by_branch"].get(wt["branch"] or ""),
+                dim=True,
+            )
+    return lines
+
+
+def pr_block(repo: dict, pr: dict) -> str:
+    text, color, _ = pr_status(repo, pr)
+    status = paint(text, color)
+    if pr.get("checks") in CHECKS:
+        sym, check_color, words = CHECKS[pr["checks"]]
+        status += " · " + paint(f"{sym} {words}", check_color)
+    return f"{status}  {pr['title']}\n{DIM}{pr['url']}{RESET}"
+
+
+def preview_session(s: dict, srepo: dict, repos: list[dict]) -> None:
+    rec = s["record"]
+    print(paint(s["title"], BOLD))
+
+    parts = []
+    live_branch = s["live_wt"]["branch"] if s["live_wt"] else None
+    live_pr = srepo["by_branch"].get(live_branch or "")
+    if s["live_wt"]:
+        parts.append(short_name(s["repo"], s["live_wt"]["path"]))
+        parts.append(live_branch or "(detached)")
+    icon, color, words = STATES.get(rec.get("state", ""), ("", "", ""))
+    if words:
+        parts.append(
+            paint(f"{icon.strip()} {words} · {clock(rec.get('state_at'))}", color)
+        )
+    if rec.get("crons"):
+        parts.append(f"{LOOP_ICON} polling")
+    print(" · ".join(parts))
+    if live_pr:
+        print(pr_block(srepo, live_pr))
+
+    prompt, reply = last_exchange(rec.get("transcript_path"))
+    if not prompt and rec.get("last_prompt"):
+        prompt = (rec["last_prompt"], iso_ts(rec.get("last_prompt_at")))
+    if prompt:
+        print(f"\n{BOLD}{CYAN}You{RESET} {DIM}· {clock(prompt[1])}{RESET}")
+        print(prompt[0][:600])
+    if reply:
+        print(f"\n{BOLD}{GREEN}Claude{RESET} {DIM}· {clock(reply[1])}{RESET}")
+        print(reply[0][:1500])
+
+    earlier = [c for c in session_children(s, srepo, repos) if c[1] != live_branch]
+    if earlier:
+        print(f"\n{BOLD}Earlier in this session{RESET}")
+        for name, branch, pr, r in earlier:
+            text, color, _ = pr_status(r, pr)
+            where = f"{name} · " if name else ""
+            title = f"  {DIM}{pr['title']}{RESET}" if pr else ""
+            print(f"  {paint(text, color)}  {where}{branch}{title}")
+
+
+def preview(target: str) -> None:
+    if target.startswith("wt:"):
+        path = target[3:]
+        print(run("git", "-C", path, "status", "-sb") or "")
+        print()
+        print(run("git", "-C", path, "log", "--oneline", "-8") or "")
+        return
+    if target.startswith("br:"):
+        repo_path, _, branch = target[3:].partition(":")
+        for repo in collect(include_all=False, fetch=False):
+            if repo["path"] == repo_path and branch in repo["by_branch"]:
+                print(pr_block(repo, repo["by_branch"][branch]))
+        print()
+        print(run("git", "-C", repo_path, "log", "--oneline", "-8", branch) or "")
+        return
+    if not target.startswith("%"):
+        return
+
+    repos = collect(include_all=False, fetch=False)
+    for repo in repos:
+        for window in repo["windows"]:
+            for s in window["sessions"]:
+                if s["pane"]["pane_id"] == target:
+                    srepo = next((r for r in repos if r["path"] == s["repo"]), repo)
+                    preview_session(s, srepo, repos)
+                    return
+            if window["active_pane"] == target and "worktree" in window:
+                path = window["worktree"]["path"]
+                print(run("git", "-C", path, "status", "-sb") or "")
+                print()
+                print(run("git", "-C", path, "log", "--oneline", "-8") or "")
+                return
+
+
+def terminal_cols() -> int:
+    return int(os.environ.get("FZF_COLUMNS") or shutil.get_terminal_size().columns)
+
+
+def fzf_lines(include_all: bool) -> str:
+    lines = render(collect(include_all, fetch=True), terminal_cols() - 4)
+    # fzf only searches displayed fields, so the blob is displayed but padded
+    # off-screen; --no-hscroll keeps a match in it from scrolling into view.
+    pad = " " * 400
+    return "\n".join(f"{t}\t{v}{pad}\t{b}\t{u}" for t, v, b, u in lines)
+
+
+def open_pr(url: str) -> None:
+    """Show a PR in the Omarchy GitHub web app, reusing a window already on it."""
+    m = re.search(r"github\.com/([^/]+/[^/]+)/pull/(\d+)", url)
+    if not m:
+        return
+
+    def github_windows() -> list[dict]:
+        clients = json.loads(run("hyprctl", "clients", "-j") or "[]")
+        return [c for c in clients if c["class"].startswith(GITHUB_APP_CLASS)]
+
+    # App windows keep the class of the URL they were launched with; the
+    # title follows the page ("… · Pull Request #1444 · owner/repo").
+    marker = f"Pull Request #{m.group(2)} · {m.group(1)}"
+    before = github_windows()
+    address = next((c["address"] for c in before if marker in c["title"]), None)
+    if not address:
+        # windows.lua sends new GitHub app windows to their workspace silently.
+        subprocess.Popen(
+            ["omarchy-launch-webapp", url],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        # Match the new window by address: its title still says "loading" for a while.
+        known = {c["address"] for c in before}
+        for _ in range(25):
+            time.sleep(0.2)
+            new = [c for c in github_windows() if c["address"] not in known]
+            if new:
+                address = new[0]["address"]
+                break
+    # This Hyprland takes Lua dispatchers (see tmux-focus, hypr/bindings.lua).
+    target = (
+        f'window = "address:{address}"'
+        if address
+        else f'workspace = "{GITHUB_WORKSPACE}"'
+    )
+    run("hyprctl", "dispatch", f"hl.dsp.focus({{ {target} }})")
+
+
+def popup(include_all: bool) -> None:
+    lines_cmd = f"{SCRIPT} --lines"
+    is_all = '[ "$FZF_PROMPT" = "all> " ]'
+    binds = [
+        f"ctrl-r:transform:{is_all} && echo 'reload({lines_cmd} --all)' || echo 'reload({lines_cmd})'",
+        f"ctrl-a:transform:{is_all} && echo 'change-prompt(> )+reload({lines_cmd})' "
+        f"|| echo 'change-prompt(all> )+reload({lines_cmd} --all)'",
+        f"ctrl-o:execute-silent({SCRIPT} --open {{4}})+abort",
+    ]
+    cmd = [
+        "fzf",
+        "--ansi",
+        "--reverse",
+        "--no-sort",
+        "--no-hscroll",
+        "--exact",
+        "--ellipsis=",
+        "--delimiter=\t",
+        "--with-nth=2,3",
+        "--accept-nth=1",
+        "--prompt",
+        "all> " if include_all else "> ",
+        "--header",
+        "enter jump · ctrl-o open PR · ctrl-r reload · ctrl-a worktrees without a window",
+        "--preview",
+        f"{SCRIPT} --preview {{1}}",
+        "--preview-window",
+        "down,45%,wrap",
+    ]
+    for b in binds:
+        cmd += ["--bind", b]
+    r = subprocess.run(
+        cmd, input=fzf_lines(include_all), capture_output=True, text=True
+    )
+    target = r.stdout.strip()
+    if target.startswith("%"):
+        subprocess.run([str(Path(SCRIPT).parent / "tmux-focus"), target])
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="tmux-map", description=__doc__.splitlines()[0]
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dump", action="store_true", help="print the tree without fzf")
+    mode.add_argument("--lines", action="store_true", help="fzf input lines")
+    mode.add_argument("--preview", metavar="TARGET", help="preview a line's target")
+    mode.add_argument("--open", metavar="URL", help="show a PR in the GitHub web app")
+    parser.add_argument(
+        "--all", action="store_true", help="include worktrees without a window"
+    )
+    args = parser.parse_args()
+
+    if args.preview is not None:
+        preview(args.preview)
+    elif args.open is not None:
+        open_pr(args.open)
+    elif args.lines:
+        print(fzf_lines(args.all))
+    elif args.dump:
+        for _, visible, _, _ in render(collect(args.all, fetch=True), terminal_cols()):
+            print(
+                visible
+                if sys.stdout.isatty()
+                else re.sub(r"\033\[[0-9;]*m", "", visible)
+            )
+    else:
+        popup(args.all)
+
+
+if __name__ == "__main__":
+    main()

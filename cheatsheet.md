@@ -432,7 +432,14 @@ palette color (status-bar tab + pane borders) so you can tell them apart at
 a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
 
 `prefix + T`    - create a new worktree + window (fzf branch picker, ctrl-n = new branch)
-`prefix + t`    - overview of all worktree windows (status, unpushed, recyclable hints)
+`prefix + t`    - tmux-map: every Claude session across tmux with its title, worktrees,
+                  branches and PRs. ⚠ needs you / ⏳ working / ✓ done, then time since
+                  the last activity; 🔁 = polling loop; PR column: CI ✓/✗/● then review
+                  state, ↺ = merged/closed. Enter jumps there, ctrl-o opens the PR in the
+                  GitHub web app (workspace 3, reusing a window already on that PR),
+                  typing searches prompts/branches/PR titles too, ctrl-r reloads,
+                  ctrl-a toggles worktrees without a window. `tmux-map --dump` prints it.
+                  The status bar's right side counts sessions per state (⚠1 ⏳2 ✓5).
 `prefix + C-t`  - restore tmux windows for worktrees that lost their window
 `prefix + X`    - remove a worktree + window (safety checks; `--force`, `--volumes`)
 `prefix + C-x`  - recycle: reuse the window for a fresh branch off main (keeps services warm)

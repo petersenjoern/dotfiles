@@ -3,7 +3,7 @@
 
 Keybindings (configured in .tmux.conf):
     prefix+T    create a new worktree window
-    prefix+t    show overview of all worktree windows
+    prefix+t    tmux-map (overview here is unbound but still runnable)
     prefix+C-t  restore windows for worktrees that lost theirs
     prefix+X    remove a worktree window
     prefix+C-x  recycle a worktree window onto a fresh branch
