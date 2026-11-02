@@ -265,3 +265,10 @@ _paste_strip_leading_space() {
     return 0
 }
 zstyle :bracketed-paste-magic paste-finish _paste_strip_leading_space
+
+# tmux panes don't inherit Hyprland's env, so hyprctl can't find the instance.
+if [[ -n $TMUX && -z $HYPRLAND_INSTANCE_SIGNATURE ]]; then
+    _hypr_sig=($XDG_RUNTIME_DIR/hypr/*(N/om[1]:t))
+    (( $#_hypr_sig )) && export HYPRLAND_INSTANCE_SIGNATURE=$_hypr_sig[1]
+    unset _hypr_sig
+fi
