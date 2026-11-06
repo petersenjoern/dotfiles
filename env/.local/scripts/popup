@@ -18,8 +18,7 @@ calendar) class='^chrome-calendar.google.com__' cmd='omarchy-launch-webapp https
 email) class='^chrome-mail.google.com__' cmd='omarchy-launch-webapp https://mail.google.com' ;;
 activity) class='^org.omarchy.btop$' cmd='omarchy-launch-tui btop' ;;
 signal) class='^signal$' cmd='uwsm-app -- signal-desktop' ;;
-# One nvim on TODO.md for every tmux session; the tmux session outlives the window
-todo) class='^org.omarchy.todo$' cmd='omarchy-launch-tui --app-id=org.omarchy.todo tmux new-session -A -s todo nvim "${DOTFILES_TODO_PATH:-$HOME/repos/personal/TODO.md}"' ;;
+todo) class='^org.omarchy.doit$' cmd='omarchy-launch-tui doit' ;;
 *)
     echo "usage: popup <name> [--preload]" >&2
     exit 1
