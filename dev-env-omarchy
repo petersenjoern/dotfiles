@@ -155,10 +155,6 @@ else
 fi
 copy $DEV_ENV/mouseless/config.yaml $HOME/.mouseless/configs/config.yaml
 
-#systemd
-copy $DEV_ENV/env/.config/systemd/user/backup-todo.timer $HOME/.config/systemd/user/backup-todo.timer
-copy $DEV_ENV/env/.config/systemd/user/backup-todo.service $HOME/.config/systemd/user/backup-todo.service
-
 # images open with their whole folder in imv (imv-dir.desktop comes from env/.local)
 image_types="image/png image/jpeg image/jpg image/gif image/bmp image/webp image/tiff image/x-xcf image/x-portable-pixmap image/x-xbitmap"
 log "xdg-mime default imv-dir.desktop $image_types"

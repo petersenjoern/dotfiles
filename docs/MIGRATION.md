@@ -27,7 +27,6 @@ These restore by logging back into the service on the new machine.
 | 1Password | SSH keys (used by SSH agent), op CLI secrets, anything fetched via `op_env` / `op_load` | Sign in to 1Password app + `eval $(op signin)` |
 | Atuin | Encrypted shell history | `atuin login -u <username>` (also needs the encryption key — see §2) |
 | GitHub | gh CLI auth | `gh auth login` |
-| Google Drive (rclone) | OAuth tokens for the TODO.md backup timer | `rclone config` (re-OAuth as `gdrive` remote) — alternative to restoring `~/.config/rclone/rclone.conf` from tarball |
 
 ---
 
@@ -47,7 +46,6 @@ Gitignored, referenced by the repo, or app credentials not managed here.
 
 ```
 <dotfiles>/dotfiles.local.conf  # holds AWS_VAULT_FILE_PASSPHRASE among other locals
-<repos>/personal/TODO.md        # referenced by backup-todo timer + tmux-sessionizer
 ~/.claude/                      # Claude Code state — auto-memory, project transcripts, plans,
                                 # tasks, todos, .credentials.json. Skip cache/telemetry/logs
                                 # (see backup command excludes).
@@ -59,7 +57,6 @@ Gitignored, referenced by the repo, or app credentials not managed here.
 ~/.local/share/atuin/key        # 72 bytes — without it, synced history is unrecoverable
 ~/.awsvault/                    # aws-vault file backend keys (encrypted)
 ~/.aws/config                   # profiles + regions only (no secrets — kept for convenience)
-~/.config/rclone/rclone.conf    # Google Drive OAuth tokens for backup-todo timer
 ```
 
 > **Do not back up `~/.aws/credentials`.** AWS credentials are managed by aws-vault. The plaintext credentials file should be empty or absent.
@@ -97,10 +94,8 @@ tar czf ~/predeploy-backup.tgz \
   ~/.local/share/atuin/key \
   ~/.awsvault \
   ~/.aws/config \
-  ~/.config/rclone/rclone.conf \
   ~/.claude \
-  <dotfiles>/dotfiles.local.conf \
-  <repos>/personal/TODO.md
+  <dotfiles>/dotfiles.local.conf
 ```
 
 Excluded `.claude` subdirs are caches, telemetry, plugin downloads, debug logs,
@@ -228,7 +223,7 @@ atuin sync
 
 ## New machine setup order
 
-1. Install OS, base tools (`git`, `zsh`, `vim`, `atuin`, `aws-vault`, `mise`, `rclone`, `1password`, `1password-cli`)
+1. Install OS, base tools (`git`, `zsh`, `vim`, `atuin`, `aws-vault`, `mise`, `1password`, `1password-cli`)
 2. Sign in to 1Password — restores SSH agent
 3. Clone this dotfiles repo, set `DEV_ENV` env var
 4. Restore tarball:
@@ -247,15 +242,6 @@ atuin sync
 10. `mise install` to rebuild toolchains
 11. Open nvim → Lazy installs plugins
 12. Open tmux → `prefix + I` to install plugins via TPM
-13. Enable the TODO.md backup timer:
-    ```bash
-    # Verify rclone config restored from tarball (or run `rclone config` to re-OAuth)
-    rclone listremotes  # should show "gdrive:"
-
-    systemctl --user daemon-reload
-    systemctl --user enable --now backup-todo.timer
-    systemctl --user list-timers backup-todo.timer
-    ```
 
 ---
 
