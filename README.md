@@ -107,7 +107,6 @@ Copy `dotfiles.local.conf.example` and fill in your values. Everything else deri
 |----------|---------|---------|
 | `DOTFILES_GIT_NAME` | Your git display name | — |
 | `DOTFILES_REPOS_DIR` | Root directory for all repos | `$HOME/repos` |
-| `DOTFILES_TODO_PATH` | Path to your TODO.md | `$HOME/repos/personal/TODO.md` |
 | `AWS_VAULT_FILE_PASSPHRASE` | aws-vault file backend passphrase | — |
 
 

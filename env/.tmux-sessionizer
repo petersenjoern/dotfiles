@@ -36,9 +36,6 @@ if [[ -n "$(git rev-parse --show-toplevel 2>/dev/null)" ]]; then
     "$HOME/.local/scripts/tmux-worktree" restore --all 2>>/tmp/tmux-worktree.log
 fi
 
-# TODO.md lives in its own "todo" session (SUPER+SHIFT+N): a window per session
-# meant one nvim per session on the same file.
-
 # 4. services window (4 panes: be, fe, docker, dbeaver)
 if ! window_exists "services"; then
     tmux new-window -dn services
