@@ -48,7 +48,8 @@
   },
   "enabledPlugins": {
     "pr-review-toolkit@claude-plugins-official": false,
-    "superpowers@superpowers-marketplace": true
+    "superpowers@superpowers-marketplace": false,
+    "mattpocock-skills@claude-plugins-official": true
   },
   "statusLine": {
     "type": "command",

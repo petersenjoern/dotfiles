@@ -113,6 +113,10 @@ copy $DEV_ENV/claude/statusline-command.sh $HOME/.claude/statusline-command.sh
 update_files $DEV_ENV/claude/hooks $HOME/.claude/hooks
 update_files $DEV_ENV/claude/commands $HOME/.claude/commands
 mkdir -p $HOME/.claude/skills
+log "removing skill copies now provided by the mattpocock-skills plugin"
+if [[ $dry_run == "0" ]]; then
+    rm -rf $HOME/.claude/skills/{codebase-design,diagnosing-bugs,domain-modeling,grilling,handoff,improve-codebase-architecture,pr,wizard,writing-for-agents}
+fi
 update_files $DEV_ENV/claude/skills $HOME/.claude/skills
 
 # omarchy additive layer (theme template overrides; hooks/menu extensions go here too)
