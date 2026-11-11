@@ -258,6 +258,9 @@ _ts_host_widget() {
 zle -N _ts_host_widget
 bindkey '^[t' _ts_host_widget
 
+# ssh in and attach (or create) the remote tmux session "main"
+rt() { ssh -t "$1" tmux new -A -s main; }
+
 # Strip leading whitespace when pasting into an empty prompt, so commands copied
 # from indented output (e.g. Claude Code) aren't hidden by HIST_IGNORE_SPACE.
 _paste_strip_leading_space() {
