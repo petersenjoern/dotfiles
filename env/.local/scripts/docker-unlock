@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# docker-unlock — grant the current user access to the docker socket until it
+# is next recreated (reboot or docker.socket restart), then optionally run a
+# command, e.g. `docker-unlock aegis up`.
+#
+# Deliberately not the docker group: that is permanent root-equivalent access.
+# This is an ACL on the socket, so it lapses on its own and has to be re-run
+# by hand after every boot.
+set -euo pipefail
+
+SOCK=/var/run/docker.sock
+
+# docker.socket is socket-activated; make sure the socket file exists.
+sudo systemctl start docker.socket
+sudo setfacl -m "u:$(id -un):rw" "$SOCK"
+echo "docker-unlock: $(id -un) can use $SOCK until it is recreated" >&2
+
+if (( $# )); then
+  exec "$@"
+fi
