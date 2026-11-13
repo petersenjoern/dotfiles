@@ -11,7 +11,7 @@ window_exists() {
 
 # 1. nvim window - rename the first window (created by tmux new-session)
 if ! window_exists "nvim"; then
-    tmux rename-window -t 1 nvim
+    tmux rename-window -t ':^' nvim
     tmux send-keys -t nvim "nvim ." C-m
 fi
 

@@ -450,7 +450,7 @@ a glance. Color is stored in `.worktrees/manifest.json` and survives restore.
                   (tmux-resurrect's save moved to `prefix + M-s` to free this key)
 
 ## Window navigation
-`M-1`..`M-9`    - jump straight to window N
+`M-0`..`M-9`    - jump straight to window N (cc-wt-N is window N)
 `M-,` / `M-.`   - move current window left / right
 `prefix + '`    - prompt for a window index; the way to reach window 10 and up
 `prefix + w`    - choose-tree overview of every session and window
