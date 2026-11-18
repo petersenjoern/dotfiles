@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs at login. Where Tang unlocks the disk (homelab's setup-disk-unlock.sh writes
+# Runs at login and after every wake. Where Tang unlocks the disk (homelab's setup-disk-unlock.sh writes
 # /etc/tang-unlock.conf), nobody typed the disk passphrase and Omarchy logs in by
 # itself, so lock the session before anyone at the keyboard can use it.
 # Tests set the LOCK_AFTER_TANG_* overrides.
@@ -10,10 +10,35 @@ status_cap_ms=500
 lock_cap_ms=1000
 [[ -e $marker ]] || exit 0
 
-# A password login at the greeter is already authenticated, so don't make the owner unlock again.
-# An unreadable Service counts as autologin, so a logind hiccup can't skip the lock.
-service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null)
-[[ -z $service || $service == sddm-autologin ]] || exit 0
+entry=$1
+case $entry in
+'')
+    # The Hyprland start hook. A login guard that failed closed has ended the session.
+    "$0" login || exit
+    exec "$0" watch
+    ;;
+login)
+    # A password login at the greeter is already authenticated, so don't make the owner unlock again.
+    # An unreadable Service counts as autologin, so a logind hiccup can't skip the lock.
+    service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null)
+    [[ -z $service || $service == sddm-autologin ]] || exit 0
+    ;;
+watch)
+    # Like omarchy-system-sleep-monitor, whose sleep lock handles "boolean true" (going to sleep).
+    # Each check runs to the end before the next line is read, so two checks never race.
+    while IFS= read -r line; do
+        [[ $line == *"boolean false"* ]] && "$0" resume </dev/null
+    done < <(dbus-monitor --system \
+        "type='signal',sender='org.freedesktop.login1',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'")
+    logger -t lock-after-tang -p user.err "stopped watching for wakes: the PrepareForSleep stream ended"
+    exit 1
+    ;;
+resume) ;;
+*)
+    echo "usage: lock-after-tang [login|resume|watch]" >&2
+    exit 2
+    ;;
+esac
 
 # SECONDS ticks on wall-clock second boundaries, so a short budget could end almost at once.
 # EPOCHREALTIME uses the locale's decimal separator, so strip every non-digit.
@@ -90,10 +115,10 @@ elif [[ -z $status_reply ]]; then
 else
     reason="the shell did not secure the session within ${budget} s"
 fi
-logger -t lock-after-tang -p user.err "could not lock the session at login: $reason"
+logger -t lock-after-tang -p user.err "could not lock the session at $entry: $reason"
 state_dir=${XDG_STATE_HOME:-$HOME/.local/state}
 mkdir -p "$state_dir"
-printf '%s\t%s\t%s\n' "$(date -Iseconds)" login "$reason" >"$state_dir/lock-after-tang.failure"
+printf '%s\t%s\t%s\n' "$(date -Iseconds)" "$entry" "$reason" >"$state_dir/lock-after-tang.failure"
 # SDDM autologins only once per boot, so ending the session brings back the password greeter.
 loginctl terminate-session "$XDG_SESSION_ID"
 exit 1

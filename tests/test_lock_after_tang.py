@@ -85,6 +85,16 @@ LOCK_OK = {"stdout": "ok"}
 AUTOLOGIN = {"loginctl": {"Service": [{"stdout": "sddm-autologin\n"}]}}
 
 
+def prepare_for_sleep(*starts: bool) -> dict:
+    """What dbus-monitor prints for logind's PrepareForSleep signals: true is going to sleep."""
+    lines = "".join(
+        "signal path=/org/freedesktop/login1; member=PrepareForSleep\n"
+        f"   boolean {str(start).lower()}\n"
+        for start in starts
+    )
+    return {"dbus-monitor": {"PrepareForSleep": [{"stdout": lines}]}}
+
+
 def sent(calls: list[dict], cmd: str, words: str = "") -> list[list[str]]:
     return [
         c["args"] for c in calls if c["cmd"] == cmd and words in " ".join(c["args"])
@@ -113,7 +123,11 @@ def run_guard(tmp_path):
     marker.touch()
 
     def run(
-        replies: dict, *, tang: bool = True, budget: float = BUDGET_S
+        replies: dict,
+        *,
+        tang: bool = True,
+        budget: float = BUDGET_S,
+        entry: str | None = "login",
     ) -> tuple[int, list[dict]]:
         (tmp_path / "replies.json").write_text(json.dumps(AUTOLOGIN | replies))
         env = os.environ | {
@@ -125,7 +139,8 @@ def run_guard(tmp_path):
             "LOCK_AFTER_TANG_BUDGET": str(budget),
             "LOCK_AFTER_TANG_POLL": "0.01",
         }
-        proc = subprocess.run([GUARD_SCRIPT], check=False, env=env, timeout=10)
+        argv = [GUARD_SCRIPT, entry] if entry else [GUARD_SCRIPT]
+        proc = subprocess.run(argv, check=False, env=env, timeout=10)
         log = tmp_path / "calls.jsonl"
         lines = log.read_text().splitlines() if log.exists() else []
         return proc.returncode, [json.loads(line) for line in lines]
@@ -148,11 +163,14 @@ def test_a_slow_shell_start_still_gets_locked(run_guard):
     assert logged(calls, "info")
 
 
-def test_without_the_tang_marker_the_guard_does_nothing(run_guard):
-    code, calls = run_guard({"omarchy-shell": {"lock status": [IDLE]}}, tang=False)
+@pytest.mark.parametrize("entry", ["login", "resume", "watch", None])
+def test_without_the_tang_marker_the_guard_does_nothing(run_guard, entry):
+    code, calls = run_guard(
+        {"omarchy-shell": {"lock status": [IDLE]}}, tang=False, entry=entry
+    )
 
     assert code == 0
-    assert sent(calls, "omarchy-shell") == []
+    assert calls == []
 
 
 def test_no_new_lock_request_while_the_shell_is_locking(run_guard):
@@ -359,6 +377,113 @@ def test_the_failure_names_what_went_wrong(run_guard, tmp_path, shell, reason):
 
     assert failure_record(tmp_path)[2] == reason
     assert reason in logged(calls, "err")[0][-1]
+
+
+def test_a_wake_that_finds_the_session_locked_leaves_it_alone(run_guard):
+    code, calls = run_guard(
+        {"omarchy-shell": {"lock status": [SECURE], "lock lock": [LOCK_OK]}},
+        entry="resume",
+    )
+
+    assert code == 0
+    assert sent(calls, "omarchy-shell", "lock lock") == []
+
+
+@pytest.mark.parametrize(
+    "service", ["sddm-autologin", "sddm"], ids=["autologin", "password"]
+)
+def test_a_wake_that_finds_the_session_unlocked_locks_it(run_guard, service):
+    code, calls = run_guard(
+        {
+            "loginctl": {"Service": [{"stdout": f"{service}\n"}]},
+            "omarchy-shell": {"lock status": [IDLE, SECURE], "lock lock": [LOCK_OK]},
+        },
+        entry="resume",
+    )
+
+    assert code == 0
+    assert sent(calls, "omarchy-shell", "lock lock")
+
+
+def test_a_wake_the_shell_cant_lock_ends_the_session(run_guard, tmp_path):
+    code, calls = run_guard(
+        {"omarchy-shell": {"lock status": [IDLE, LOCKING], "lock lock": [LOCK_OK]}},
+        budget=FAILING_BUDGET_S,
+        entry="resume",
+    )
+
+    _, entry, reason = failure_record(tmp_path)
+    assert entry == "resume"
+    [message] = [args[-1] for args in logged(calls, "err")]
+    assert "resume" in message
+    assert reason in message
+    terminated = sent(calls, "loginctl", "terminate-session")
+    assert terminated == [["terminate-session", SESSION_ID]]
+    assert code != 0
+
+
+def test_watch_checks_each_wake_one_after_the_other(run_guard):
+    # A slow status read lets a second check that didn't wait read in between.
+    _, calls = run_guard(
+        prepare_for_sleep(False, False)
+        | {"omarchy-shell": {"lock status": [SECURE | {"delay": 0.2}]}},
+        entry="watch",
+    )
+
+    steps = [
+        c["cmd"]
+        for c in calls
+        if c["cmd"] == "omarchy-shell" or "user.info" in c["args"]
+    ]
+    assert steps == ["omarchy-shell", "logger"] * 2
+
+
+def test_watch_leaves_going_to_sleep_to_omarchy(run_guard):
+    _, calls = run_guard(
+        prepare_for_sleep(True, True) | {"omarchy-shell": {"lock status": [IDLE]}},
+        entry="watch",
+    )
+
+    assert sent(calls, "omarchy-shell") == []
+
+
+def test_watch_logs_an_error_when_the_signal_stream_ends(run_guard):
+    code, calls = run_guard(prepare_for_sleep(), entry="watch")
+
+    assert sent(calls, "dbus-monitor")
+    assert logged(calls, "err")
+    assert code != 0
+
+
+def test_the_start_hook_run_guards_the_login_then_watches(run_guard):
+    _, calls = run_guard(
+        {"omarchy-shell": {"lock status": [IDLE, SECURE], "lock lock": [LOCK_OK]}},
+        entry=None,
+    )
+
+    # The login guard's Service check and success log, then the watcher and its end.
+    steps = [
+        c["cmd"] for c in calls if c["cmd"] in ("loginctl", "logger", "dbus-monitor")
+    ]
+    assert steps == ["loginctl", "logger", "dbus-monitor", "logger"]
+
+
+def test_a_login_guard_that_fails_closed_never_watches(run_guard):
+    _, calls = run_guard(
+        {"omarchy-shell": {"lock status": [IDLE, LOCKING], "lock lock": [LOCK_OK]}},
+        budget=FAILING_BUDGET_S,
+        entry=None,
+    )
+
+    assert sent(calls, "loginctl", "terminate-session")
+    assert sent(calls, "dbus-monitor") == []
+
+
+def test_an_unknown_entry_point_does_nothing(run_guard):
+    code, calls = run_guard({"omarchy-shell": {"lock status": [IDLE]}}, entry="--help")
+
+    assert calls == []
+    assert code != 0
 
 
 if __name__ == "__main__":
