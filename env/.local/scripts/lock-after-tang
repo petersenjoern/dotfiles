@@ -6,23 +6,69 @@
 marker=${LOCK_AFTER_TANG_MARKER:-/etc/tang-unlock.conf}
 budget=${LOCK_AFTER_TANG_BUDGET:-60}
 poll=${LOCK_AFTER_TANG_POLL:-0.5}
+status_cap_ms=500
+lock_cap_ms=1000
 [[ -e $marker ]] || exit 0
+
+# A password login at the greeter is already authenticated, so don't make the owner unlock again.
+# An unreadable Service counts as autologin, so a logind hiccup can't skip the lock.
+service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null)
+[[ -z $service || $service == sddm-autologin ]] || exit 0
 
 # SECONDS ticks on wall-clock second boundaries, so a short budget could end almost at once.
 # EPOCHREALTIME uses the locale's decimal separator, so strip every non-digit.
-deadline=$((${EPOCHREALTIME//[!0-9]/} + budget * 1000000))
+now_ms() { echo $((${EPOCHREALTIME//[!0-9]/} / 1000)); }
+deadline_ms=$(($(now_ms) + budget * 1000))
+
+# Like omarchy-system-sleep-lock, bound each call by the shell's IPC timeout and a hard kill,
+# both clipped to the budget left, so a stalled shell can't hold the guard past it.
+shell_ipc() {
+    local limit=$1 left seconds
+    shift
+    left=$((deadline_ms - $(now_ms)))
+    ((left > 0)) || return 1
+    ((limit < left)) || limit=$left
+    printf -v seconds '%d.%03d' $((limit / 1000)) $((limit % 1000))
+    OMARCHY_SHELL_IPC_TIMEOUT=$seconds timeout --kill-after=0.1s "$seconds" omarchy-shell "$@"
+}
+
+finish() {
+    logger -t lock-after-tang -p user.info "$1"
+    exit 0
+}
+
+lock_state() {
+    shell_ipc "$status_cap_ms" lock status 2>/dev/null |
+        jq -r 'if .secure == true then "secure"
+            elif .requested == true and .pending == true and .realScreens == 0 then "held"
+            elif .requested == true then "locking"
+            else "idle" end' 2>/dev/null
+}
+
+# Exits on a done state, and fails when the lock still has to be requested.
+settle() {
+    case $1 in
+    secure) finish "locked the session" ;;
+    held) finish "the shell holds the lock until a screen appears" ;;
+    locking) taken=1 ;;
+    *)
+        # Idle after the shell took the lock means the owner unlocked, so don't lock again.
+        [[ -z $taken ]] || finish "the owner unlocked the session"
+        return 1
+        ;;
+    esac
+}
 
 # The lock screen lives in the Omarchy shell, which is still starting, so ask until it
 # reports the session secure. Like omarchy-system-sleep-lock, don't re-ask while it locks.
-while ((${EPOCHREALTIME//[!0-9]/} < deadline)); do
-    case $(omarchy-shell lock status 2>/dev/null |
-        jq -r 'if .secure then "secure" elif .requested then "locking" else "idle" end' 2>/dev/null) in
-    secure) exit 0 ;;
-    locking) ;;
-    *) omarchy-shell -q lock lock ;;
-    esac
+while (($(now_ms) < deadline_ms)); do
+    settle "$(lock_state)" || shell_ipc "$lock_cap_ms" -q lock lock
     sleep "$poll"
 done
+
+# A lock that came up during the last call still counts, so give one more read its full cap.
+deadline_ms=$(($(now_ms) + status_cap_ms))
+settle "$(lock_state)"
 
 logger -t lock-after-tang "the session did not lock within ${budget}s of login"
 omarchy-notification-send -u critical "Screen did not lock at login" \
