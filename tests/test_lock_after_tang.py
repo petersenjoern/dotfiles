@@ -210,10 +210,11 @@ def test_a_pending_lock_that_may_have_screens_keeps_the_guard_waiting(
 
 def test_an_immediate_unlock_stays_unlocked(run_guard):
     # The session was secure and unlocked again between two polls.
+    unlocked = status_reply(lastEvent="unlocked")
     code, calls = run_guard(
         {
             "omarchy-shell": {
-                "lock status": [IDLE, LOCKING, IDLE],
+                "lock status": [IDLE, LOCKING, unlocked],
                 "lock lock": [LOCK_OK],
             }
         }
@@ -222,6 +223,20 @@ def test_an_immediate_unlock_stays_unlocked(run_guard):
     assert code == 0
     assert len(sent(calls, "omarchy-shell", "lock lock")) == 1
     assert logged(calls, "info")
+
+
+def test_a_lock_dropped_by_a_restarted_shell_is_requested_again(run_guard):
+    restarted = status_reply(lastEvent="init")
+    _, calls = run_guard(
+        {
+            "omarchy-shell": {
+                "lock status": [IDLE, LOCKING, restarted],
+                "lock lock": [LOCK_OK],
+            }
+        }
+    )
+
+    assert len(sent(calls, "omarchy-shell", "lock lock")) > 1
 
 
 def test_status_fields_count_only_when_they_are_true(run_guard):

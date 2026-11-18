@@ -42,6 +42,7 @@ lock_state() {
         jq -r 'if .secure == true then "secure"
             elif .requested == true and .pending == true and .realScreens == 0 then "held"
             elif .requested == true then "locking"
+            elif .lastEvent == "unlocked" or .lastEvent == "secure=false" then "unlocked"
             else "idle" end' 2>/dev/null
 }
 
@@ -52,8 +53,8 @@ settle() {
     held) finish "the shell holds the lock until a screen appears" ;;
     locking) taken=1 ;;
     *)
-        # Idle after the shell took the lock means the owner unlocked, so don't lock again.
-        [[ -z $taken ]] || finish "the owner unlocked the session"
+        # Only a lock the shell secured can have been unlocked by the owner; any other idle asks again.
+        [[ $1 == unlocked && -n $taken ]] && finish "the owner unlocked the session"
         return 1
         ;;
     esac
