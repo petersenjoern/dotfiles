@@ -18,11 +18,11 @@ budget_ms=$(jq -n --arg s "$budget" '$s | tonumber * 1000')
 deadline_ms=$(($(now_ms) + budget_ms))
 
 # Like omarchy-system-sleep-lock, bound each call by the shell's IPC timeout and a hard kill,
-# both clipped to the budget left, so a stalled shell can't hold the guard past it.
+# both clipped to the time left before the deadline, so a stalled shell can't hold the guard past it.
 shell_ipc() {
-    local limit=$1 left seconds
-    shift
-    left=$((deadline_ms - $(now_ms)))
+    local deadline=$1 limit=$2 left seconds
+    shift 2
+    left=$((deadline - $(now_ms)))
     ((left > 0)) || return 1
     ((limit < left)) || limit=$left
     printf -v seconds '%d.%03d' $((limit / 1000)) $((limit % 1000))
@@ -30,18 +30,18 @@ shell_ipc() {
 }
 
 # A failed lock sent the owner back to the greeter, so tell them why in the next session.
-deliver() {
-    local when entry reason
+deliver_failure_notice() {
+    local when failed_entry reason deadline
     [[ -e $record ]] || return 0
-    IFS=$'\t' read -r when entry reason <"$record"
-    deadline_ms=$(($(now_ms) + budget_ms))
+    IFS=$'\t' read -r when failed_entry reason <"$record"
+    deadline=$(($(now_ms) + budget_ms))
     # The shell is also the notification server, and it may still be starting.
-    until shell_ipc "$status_cap_ms" lock status >/dev/null; do
-        (($(now_ms) < deadline_ms)) || return
+    until shell_ipc "$deadline" "$status_cap_ms" lock status >/dev/null; do
+        (($(now_ms) < deadline)) || return
         sleep "$poll"
     done
     omarchy-notification-send -u critical "Ended a session that could not be locked" \
-        "At $entry on $when: $reason" && rm "$record"
+        "At $failed_entry on $when: $reason" && rm "$record"
 }
 
 entry=$1
@@ -53,7 +53,7 @@ case $entry in
     # The Hyprland start hook. A login guard that failed closed has ended the session.
     "$0" login || exit
     # In the background, so a slow delivery doesn't leave wakes unwatched.
-    deliver &
+    deliver_failure_notice &
     exec "$0" watch
     ;;
 login)
@@ -84,10 +84,9 @@ finish() {
     exit 0
 }
 
-# Sets state, and keeps the last status reply for the failure reason.
-lock_state() {
+read_lock_state() {
     local reply
-    reply=$(shell_ipc "$status_cap_ms" lock status 2>/dev/null)
+    reply=$(shell_ipc "$1" "$status_cap_ms" lock status 2>/dev/null)
     state=$(jq -r 'if .secure == true then "secure"
             elif .requested == true and .pending == true and .realScreens == 0 then "held"
             elif .requested == true then "locking"
@@ -96,36 +95,34 @@ lock_state() {
     [[ -n $state ]] && status_reply=$reply
 }
 
-# Exits on a done state, and fails when the lock still has to be requested.
-settle() {
+finish_if_done() {
     case $1 in
     secure) finish "locked the session" ;;
     held) finish "the shell holds the lock until a screen appears" ;;
-    locking) taken=1 ;;
+    locking) lock_accepted=1 ;;
     *)
         # Only a lock the shell secured can have been unlocked by the owner; any other idle asks again.
-        [[ $1 == unlocked && -n $taken ]] && finish "the owner unlocked the session"
+        [[ $1 == unlocked && -n $lock_accepted ]] && finish "the owner unlocked the session"
         return 1
         ;;
     esac
 }
 
-# The lock screen lives in the Omarchy shell, which is still starting, so ask until it
-# reports the session secure. Like omarchy-system-sleep-lock, don't re-ask while it locks.
+# The lock screen lives in the Omarchy shell, which may not be ready at login or just after a wake,
+# so ask until it reports the session secure. Like omarchy-system-sleep-lock, don't re-ask while it locks.
 while (($(now_ms) < deadline_ms)); do
-    lock_state
-    if ! settle "$state"; then
+    read_lock_state "$deadline_ms"
+    if ! finish_if_done "$state"; then
         # A call cut off by the budget has no reply, so keep the last one for the failure reason.
-        reply=$(shell_ipc "$lock_cap_ms" lock lock)
+        reply=$(shell_ipc "$deadline_ms" "$lock_cap_ms" lock lock)
         lock_reply=${reply:-$lock_reply}
     fi
     sleep "$poll"
 done
 
 # A lock that came up during the last call still counts, so give one more read its full cap.
-deadline_ms=$(($(now_ms) + status_cap_ms))
-lock_state
-settle "$state"
+read_lock_state "$(($(now_ms) + status_cap_ms))"
+finish_if_done "$state"
 
 if [[ $lock_reply == missing-pam ]] || jq -e '.passwordPam == false' <<<"$status_reply" >/dev/null; then
     reason="no lock screen is configured"
