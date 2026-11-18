@@ -8,18 +8,14 @@ budget=${LOCK_AFTER_TANG_BUDGET:-60}
 poll=${LOCK_AFTER_TANG_POLL:-0.5}
 status_cap_ms=500
 lock_cap_ms=1000
-[[ -e $marker ]] || exit 0
-
-# A password login at the greeter is already authenticated, so don't make the owner unlock again.
-# An unreadable Service counts as autologin, so a logind hiccup can't skip the lock.
-service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null)
-[[ -z $service || $service == sddm-autologin ]] || exit 0
+record=${XDG_STATE_HOME:-$HOME/.local/state}/lock-after-tang.failure
 
 # SECONDS ticks on wall-clock second boundaries, so a short budget could end almost at once.
 # EPOCHREALTIME uses the locale's decimal separator, so strip every non-digit.
 now_ms() { echo $((${EPOCHREALTIME//[!0-9]/} / 1000)); }
 # Tests pass a fraction of a second, which bash arithmetic can't take.
-deadline_ms=$(($(now_ms) + $(jq -n --arg s "$budget" '$s | tonumber * 1000')))
+budget_ms=$(jq -n --arg s "$budget" '$s | tonumber * 1000')
+deadline_ms=$(($(now_ms) + budget_ms))
 
 # Like omarchy-system-sleep-lock, bound each call by the shell's IPC timeout and a hard kill,
 # both clipped to the budget left, so a stalled shell can't hold the guard past it.
@@ -32,6 +28,35 @@ shell_ipc() {
     printf -v seconds '%d.%03d' $((limit / 1000)) $((limit % 1000))
     OMARCHY_SHELL_IPC_TIMEOUT=$seconds timeout --kill-after=0.1s "$seconds" omarchy-shell "$@"
 }
+
+# A failed lock sent the owner back to the greeter, so tell them why in the next session.
+deliver() {
+    local when entry reason
+    [[ -e $record ]] || return 0
+    IFS=$'\t' read -r when entry reason <"$record"
+    deadline_ms=$(($(now_ms) + budget_ms))
+    # The shell is also the notification server, and it may still be starting.
+    until shell_ipc "$status_cap_ms" lock status >/dev/null; do
+        (($(now_ms) < deadline_ms)) || return
+        sleep "$poll"
+    done
+    omarchy-notification-send -u critical "Ended a session that could not be locked" \
+        "At $entry on $when: $reason" && rm "$record"
+}
+
+# The login guard exits wherever it is done, so run it as a child and deliver after it.
+if (($# == 0)); then
+    "$0" login || exit
+    deliver
+    exit
+fi
+
+[[ -e $marker ]] || exit 0
+
+# A password login at the greeter is already authenticated, so don't make the owner unlock again.
+# An unreadable Service counts as autologin, so a logind hiccup can't skip the lock.
+service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null)
+[[ -z $service || $service == sddm-autologin ]] || exit 0
 
 finish() {
     logger -t lock-after-tang -p user.info "$1"
@@ -91,9 +116,8 @@ else
     reason="the shell did not secure the session within ${budget} s"
 fi
 logger -t lock-after-tang -p user.err "could not lock the session at login: $reason"
-state_dir=${XDG_STATE_HOME:-$HOME/.local/state}
-mkdir -p "$state_dir"
-printf '%s\t%s\t%s\n' "$(date -Iseconds)" login "$reason" >"$state_dir/lock-after-tang.failure"
+mkdir -p "${record%/*}"
+printf '%s\t%s\t%s\n' "$(date -Iseconds)" login "$reason" >"$record"
 # SDDM autologins only once per boot, so ending the session brings back the password greeter.
 loginctl terminate-session "$XDG_SESSION_ID"
 exit 1
