@@ -12,9 +12,11 @@ needs root, a Tang box or a running Omarchy shell.
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -23,6 +25,9 @@ GUARD_SCRIPT = (
     Path(__file__).resolve().parents[1] / "env/.local/scripts/lock-after-tang"
 )
 BUDGET_S = 1
+# Runs meant to fail spend their whole budget, so give them less of it.
+FAILING_BUDGET_S = 0.5
+SESSION_ID = "c7"
 STUBBED = [
     "omarchy-shell",
     "loginctl",
@@ -33,9 +38,10 @@ STUBBED = [
 
 # Each stub logs its call, then answers from the first rule whose key is in its
 # arguments. A rule's replies come in turn, and the last one repeats.
-# Unmatched calls succeed silently.
+# Unmatched calls succeed silently. A reply can kill the caller, as logind does
+# to everything in a session it terminates.
 STUB_SOURCE = """#!{python} -IS
-import json, os, sys, time
+import json, os, signal, sys, time
 
 name = os.path.basename(sys.argv[0])
 args = sys.argv[1:]
@@ -53,6 +59,8 @@ for i, (key, replies) in enumerate(rules.items()):
             f.write(str(n + 1))
         reply = replies[min(n, len(replies) - 1)]
         time.sleep(reply.get("delay", 0))
+        if reply.get("kill_caller"):
+            os.kill(os.getppid(), signal.SIGTERM)
         sys.stdout.write(reply.get("stdout", ""))
         sys.exit(reply.get("exit", 0))
 """
@@ -87,6 +95,12 @@ def logged(calls: list[dict], priority: str) -> list[list[str]]:
     return sent(calls, "logger", f"-p user.{priority}")
 
 
+def failure_record(tmp_path: Path) -> list[str]:
+    """Splits the failure record into its time, entry point and reason."""
+    record = tmp_path / "state/lock-after-tang.failure"
+    return record.read_text().rstrip("\n").split("\t")
+
+
 @pytest.fixture
 def run_guard(tmp_path):
     stubs = tmp_path / "stubs"
@@ -98,14 +112,17 @@ def run_guard(tmp_path):
     marker = tmp_path / "tang-unlock.conf"
     marker.touch()
 
-    def run(replies: dict, *, tang: bool = True) -> tuple[int, list[dict]]:
+    def run(
+        replies: dict, *, tang: bool = True, budget: float = BUDGET_S
+    ) -> tuple[int, list[dict]]:
         (tmp_path / "replies.json").write_text(json.dumps(AUTOLOGIN | replies))
         env = os.environ | {
             "PATH": f"{stubs}:{os.environ['PATH']}",
             "STUB_HOME": str(tmp_path),
             "XDG_STATE_HOME": str(tmp_path / "state"),
+            "XDG_SESSION_ID": SESSION_ID,
             "LOCK_AFTER_TANG_MARKER": str(marker if tang else tmp_path / "absent"),
-            "LOCK_AFTER_TANG_BUDGET": str(BUDGET_S),
+            "LOCK_AFTER_TANG_BUDGET": str(budget),
             "LOCK_AFTER_TANG_POLL": "0.01",
         }
         proc = subprocess.run([GUARD_SCRIPT], check=False, env=env, timeout=10)
@@ -271,6 +288,77 @@ def test_a_stalled_shell_cant_push_the_guard_past_its_budget(run_guard):
 
     # The margin covers the final status read and process start-up.
     assert time.monotonic() - start < BUDGET_S + 1
+
+
+def test_a_lock_that_never_comes_ends_the_session(run_guard, tmp_path):
+    code, calls = run_guard(
+        {"omarchy-shell": {"lock status": [IDLE, LOCKING], "lock lock": [LOCK_OK]}},
+        budget=FAILING_BUDGET_S,
+    )
+
+    time_, entry, reason = failure_record(tmp_path)
+    age = datetime.now().astimezone() - datetime.fromisoformat(time_)
+    assert age < timedelta(minutes=1)
+    assert entry == "login"
+    assert reason == (
+        f"the shell did not secure the session within {FAILING_BUDGET_S} s"
+    )
+    [message] = [args[-1] for args in logged(calls, "err")]
+    assert reason in message
+    terminated = sent(calls, "loginctl", "terminate-session")
+    assert terminated == [["terminate-session", SESSION_ID]]
+    # It would land on the screen of whoever is at the keyboard.
+    assert sent(calls, "omarchy-notification-send") == []
+    assert code != 0
+
+
+def test_the_failure_is_on_record_before_the_session_ends(run_guard, tmp_path):
+    code, calls = run_guard(
+        {
+            "omarchy-shell": {"lock status": [IDLE, LOCKING], "lock lock": [LOCK_OK]},
+            "loginctl": AUTOLOGIN["loginctl"]
+            | {"terminate-session": [{"kill_caller": True}]},
+        },
+        budget=FAILING_BUDGET_S,
+    )
+
+    assert code == -signal.SIGTERM
+    assert failure_record(tmp_path)[2]
+    steps = [
+        c["cmd"]
+        for c in calls
+        if c["cmd"] == "logger" or "terminate-session" in c["args"]
+    ]
+    assert steps == ["logger", "loginctl"]
+
+
+@pytest.mark.parametrize(
+    ("shell", "reason"),
+    [
+        (
+            {"lock status": [IDLE], "lock lock": [{"stdout": "missing-pam\n"}]},
+            "no lock screen is configured",
+        ),
+        (
+            {"lock status": [status_reply(passwordPam=False)], "lock lock": [LOCK_OK]},
+            "no lock screen is configured",
+        ),
+        (
+            {"lock status": [IDLE], "lock lock": [{"stdout": "failed\n"}]},
+            "the shell refused to lock",
+        ),
+        (
+            {"lock status": [SHELL_DOWN], "lock lock": [SHELL_DOWN]},
+            "the shell did not answer",
+        ),
+    ],
+    ids=["missing-pam", "no-password-pam", "failed", "no-answer"],
+)
+def test_the_failure_names_what_went_wrong(run_guard, tmp_path, shell, reason):
+    _, calls = run_guard({"omarchy-shell": shell}, budget=FAILING_BUDGET_S)
+
+    assert failure_record(tmp_path)[2] == reason
+    assert reason in logged(calls, "err")[0][-1]
 
 
 if __name__ == "__main__":

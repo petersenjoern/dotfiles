@@ -2,7 +2,7 @@
 # Runs at login. Where Tang unlocks the disk (homelab's setup-disk-unlock.sh writes
 # /etc/tang-unlock.conf), nobody typed the disk passphrase and Omarchy logs in by
 # itself, so lock the session before anyone at the keyboard can use it.
-# Tests set the LOCK_AFTER_TANG_* overrides. The budget is in whole seconds.
+# Tests set the LOCK_AFTER_TANG_* overrides.
 marker=${LOCK_AFTER_TANG_MARKER:-/etc/tang-unlock.conf}
 budget=${LOCK_AFTER_TANG_BUDGET:-60}
 poll=${LOCK_AFTER_TANG_POLL:-0.5}
@@ -18,7 +18,8 @@ service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null
 # SECONDS ticks on wall-clock second boundaries, so a short budget could end almost at once.
 # EPOCHREALTIME uses the locale's decimal separator, so strip every non-digit.
 now_ms() { echo $((${EPOCHREALTIME//[!0-9]/} / 1000)); }
-deadline_ms=$(($(now_ms) + budget * 1000))
+# Tests pass a fraction of a second, which bash arithmetic can't take.
+deadline_ms=$(($(now_ms) + $(jq -n --arg s "$budget" '$s | tonumber * 1000')))
 
 # Like omarchy-system-sleep-lock, bound each call by the shell's IPC timeout and a hard kill,
 # both clipped to the budget left, so a stalled shell can't hold the guard past it.
@@ -37,13 +38,16 @@ finish() {
     exit 0
 }
 
+# Sets state, and keeps the last status reply for the failure reason.
 lock_state() {
-    shell_ipc "$status_cap_ms" lock status 2>/dev/null |
-        jq -r 'if .secure == true then "secure"
+    local reply
+    reply=$(shell_ipc "$status_cap_ms" lock status 2>/dev/null)
+    state=$(jq -r 'if .secure == true then "secure"
             elif .requested == true and .pending == true and .realScreens == 0 then "held"
             elif .requested == true then "locking"
             elif .lastEvent == "unlocked" or .lastEvent == "secure=false" then "unlocked"
-            else "idle" end' 2>/dev/null
+            else "idle" end' <<<"$reply" 2>/dev/null)
+    [[ -n $state ]] && status_reply=$reply
 }
 
 # Exits on a done state, and fails when the lock still has to be requested.
@@ -63,15 +67,33 @@ settle() {
 # The lock screen lives in the Omarchy shell, which is still starting, so ask until it
 # reports the session secure. Like omarchy-system-sleep-lock, don't re-ask while it locks.
 while (($(now_ms) < deadline_ms)); do
-    settle "$(lock_state)" || shell_ipc "$lock_cap_ms" -q lock lock
+    lock_state
+    if ! settle "$state"; then
+        # A call cut off by the budget has no reply, so keep the last one for the failure reason.
+        reply=$(shell_ipc "$lock_cap_ms" lock lock)
+        lock_reply=${reply:-$lock_reply}
+    fi
     sleep "$poll"
 done
 
 # A lock that came up during the last call still counts, so give one more read its full cap.
 deadline_ms=$(($(now_ms) + status_cap_ms))
-settle "$(lock_state)"
+lock_state
+settle "$state"
 
-logger -t lock-after-tang "the session did not lock within ${budget}s of login"
-omarchy-notification-send -u critical "Screen did not lock at login" \
-    "Tang unlocked the disk, but the lock screen never came up." >/dev/null 2>&1
+if [[ $lock_reply == missing-pam ]] || jq -e '.passwordPam == false' <<<"$status_reply" >/dev/null; then
+    reason="no lock screen is configured"
+elif [[ $lock_reply == failed ]]; then
+    reason="the shell refused to lock"
+elif [[ -z $status_reply ]]; then
+    reason="the shell did not answer"
+else
+    reason="the shell did not secure the session within ${budget} s"
+fi
+logger -t lock-after-tang -p user.err "could not lock the session at login: $reason"
+state_dir=${XDG_STATE_HOME:-$HOME/.local/state}
+mkdir -p "$state_dir"
+printf '%s\t%s\t%s\n' "$(date -Iseconds)" login "$reason" >"$state_dir/lock-after-tang.failure"
+# SDDM autologins only once per boot, so ending the session brings back the password greeter.
+loginctl terminate-session "$XDG_SESSION_ID"
 exit 1
