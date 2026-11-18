@@ -12,3 +12,4 @@ pi/agent/mcp.json
 env/.local/scripts/datakit
 __pycache__/
 .ruff_cache/
+.scratch/

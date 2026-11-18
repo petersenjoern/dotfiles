@@ -2,6 +2,8 @@
 
 Issues and specs for this repo live as markdown files in `.scratch/`.
 
+`.scratch/` is gitignored, so the tracker stays local. Never commit its files or put them in a PR.
+
 ## Conventions
 
 - One feature per directory: `.scratch/<feature-slug>/`
