@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Runs at login. Where Tang unlocks the disk (homelab's setup-disk-unlock.sh writes
+# /etc/tang-unlock.conf), nobody typed the disk passphrase and Omarchy logs in by
+# itself, so lock the session before anyone at the keyboard can use it.
+# Tests set the LOCK_AFTER_TANG_* overrides. The budget is in whole seconds.
+marker=${LOCK_AFTER_TANG_MARKER:-/etc/tang-unlock.conf}
+budget=${LOCK_AFTER_TANG_BUDGET:-60}
+poll=${LOCK_AFTER_TANG_POLL:-0.5}
+[[ -e $marker ]] || exit 0
+
+# SECONDS ticks on wall-clock second boundaries, so a short budget could end almost at once.
+# EPOCHREALTIME uses the locale's decimal separator, so strip every non-digit.
+deadline=$((${EPOCHREALTIME//[!0-9]/} + budget * 1000000))
+
+# The lock screen lives in the Omarchy shell, which is still starting, so ask until it
+# reports the session secure. Like omarchy-system-sleep-lock, don't re-ask while it locks.
+while ((${EPOCHREALTIME//[!0-9]/} < deadline)); do
+    case $(omarchy-shell lock status 2>/dev/null |
+        jq -r 'if .secure then "secure" elif .requested then "locking" else "idle" end' 2>/dev/null) in
+    secure) exit 0 ;;
+    locking) ;;
+    *) omarchy-shell -q lock lock ;;
+    esac
+    sleep "$poll"
+done
+
+logger -t lock-after-tang "the session did not lock within ${budget}s of login"
+omarchy-notification-send -u critical "Screen did not lock at login" \
+    "Tang unlocked the disk, but the lock screen never came up." >/dev/null 2>&1
+exit 1
