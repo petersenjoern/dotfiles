@@ -54,9 +54,11 @@ end
 o.bind("SUPER + CTRL + M", "Agents (Claude usage)", "omarchy-shell shell toggle omarchy.agents")
 o.bind("SUPER + CTRL + U", "Tailscale", "omarchy-shell shell toggle omarchy.tailscale")
 
--- Second scratchpad, mirroring Omarchy's SUPER+S / SUPER+ALT+S pair
+-- Extra scratchpads, mirroring Omarchy's SUPER+S / SUPER+ALT+S pair
 o.bind("SUPER + D", "Toggle scratchpad 2", hl.dsp.workspace.toggle_special("scratchpad2"))
 o.bind("SUPER + ALT + D", "Move window to scratchpad 2", hl.dsp.window.move({ workspace = "special:scratchpad2", follow = false }))
+o.bind("SUPER + A", "Toggle scratchpad 3", hl.dsp.workspace.toggle_special("scratchpad3"))
+o.bind("SUPER + ALT + A", "Move window to scratchpad 3", hl.dsp.window.move({ workspace = "special:scratchpad3", follow = false }))
 
 -- Keep workspace switching on CTRL+1..9 only (SUPER+1..0 freed up).
 -- SUPER+SHIFT+code:* (move window to workspace) defaults are left untouched.
