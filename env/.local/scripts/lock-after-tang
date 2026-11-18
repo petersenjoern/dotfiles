@@ -9,6 +9,8 @@ poll=${LOCK_AFTER_TANG_POLL:-0.5}
 status_cap_ms=500
 lock_cap_ms=1000
 record=${XDG_STATE_HOME:-$HOME/.local/state}/lock-after-tang.failure
+# auto is the caller's session, or else the user's graphical one, so a missing id can't leave the session open.
+session=${XDG_SESSION_ID:-auto}
 
 # SECONDS ticks on wall-clock second boundaries, so a short budget could end almost at once.
 # EPOCHREALTIME uses the locale's decimal separator, so strip every non-digit.
@@ -16,17 +18,19 @@ now_ms() { echo $((${EPOCHREALTIME//[!0-9]/} / 1000)); }
 # Tests pass a fraction of a second, which bash arithmetic can't take.
 budget_ms=$(jq -n --arg s "$budget" '$s | tonumber * 1000')
 deadline_ms=$(($(now_ms) + budget_ms))
+# The longest a poll step can take awake: both capped calls, the poll and a second of slack.
+max_step_ms=$(jq -n --arg s "$poll" "\$s | tonumber * 1000 + $status_cap_ms + $lock_cap_ms + 1000 | floor")
 
 # Like omarchy-system-sleep-lock, bound each call by the shell's IPC timeout and a hard kill,
 # both clipped to the time left before the deadline, so a stalled shell can't hold the guard past it.
-shell_ipc() {
+bounded() {
     local deadline=$1 limit=$2 left seconds
     shift 2
     left=$((deadline - $(now_ms)))
     ((left > 0)) || return 1
     ((limit < left)) || limit=$left
     printf -v seconds '%d.%03d' $((limit / 1000)) $((limit % 1000))
-    OMARCHY_SHELL_IPC_TIMEOUT=$seconds timeout --kill-after=0.1s "$seconds" omarchy-shell "$@"
+    OMARCHY_SHELL_IPC_TIMEOUT=$seconds timeout --kill-after=0.1s "$seconds" "$@"
 }
 
 # A failed lock sent the owner back to the greeter, so tell them why in the next session.
@@ -36,12 +40,13 @@ deliver_failure_notice() {
     IFS=$'\t' read -r when failed_entry reason <"$record"
     deadline=$(($(now_ms) + budget_ms))
     # The shell is also the notification server, and it may still be starting.
-    until shell_ipc "$deadline" "$status_cap_ms" lock status >/dev/null; do
+    until bounded "$deadline" "$status_cap_ms" omarchy-shell lock status >/dev/null &&
+        bounded "$deadline" "$budget_ms" omarchy-notification-send -u critical \
+            "Ended a session that could not be locked" "At $failed_entry on $when: $reason"; do
         (($(now_ms) < deadline)) || return
         sleep "$poll"
     done
-    omarchy-notification-send -u critical "Ended a session that could not be locked" \
-        "At $failed_entry on $when: $reason" && rm "$record"
+    rm "$record"
 }
 
 entry=$1
@@ -59,7 +64,7 @@ case $entry in
 login)
     # A password login at the greeter is already authenticated, so don't make the owner unlock again.
     # An unreadable Service counts as autologin, so a logind hiccup can't skip the lock.
-    service=$(loginctl show-session "$XDG_SESSION_ID" -p Service --value 2>/dev/null)
+    service=$(loginctl show-session "$session" -p Service --value 2>/dev/null)
     [[ -z $service || $service == sddm-autologin ]] || exit 0
     ;;
 watch)
@@ -86,7 +91,7 @@ finish() {
 
 read_lock_state() {
     local reply
-    reply=$(shell_ipc "$1" "$status_cap_ms" lock status 2>/dev/null)
+    reply=$(bounded "$1" "$status_cap_ms" omarchy-shell lock status 2>/dev/null)
     state=$(jq -r 'if .secure == true then "secure"
             elif .requested == true and .pending == true and .realScreens == 0 then "held"
             elif .requested == true then "locking"
@@ -97,9 +102,12 @@ read_lock_state() {
 
 finish_if_done() {
     case $1 in
-    secure) finish "locked the session" ;;
-    held) finish "the shell holds the lock until a screen appears" ;;
-    locking) lock_accepted=1 ;;
+    secure)
+        [[ -n $lock_requested ]] && finish "locked the session"
+        finish "the session was already locked"
+        ;;
+    # A held lock lives only in the shell, so keep watching in case a restarted shell drops it.
+    held | locking) lock_accepted=1 ;;
     *)
         # Only a lock the shell secured can have been unlocked by the owner; any other idle asks again.
         [[ $1 == unlocked && -n $lock_accepted ]] && finish "the owner unlocked the session"
@@ -110,18 +118,26 @@ finish_if_done() {
 
 # The lock screen lives in the Omarchy shell, which may not be ready at login or just after a wake,
 # so ask until it reports the session secure. Like omarchy-system-sleep-lock, don't re-ask while it locks.
+step_start_ms=$(now_ms)
 while (($(now_ms) < deadline_ms)); do
     read_lock_state "$deadline_ms"
     if ! finish_if_done "$state"; then
         # A call cut off by the budget has no reply, so keep the last one for the failure reason.
-        reply=$(shell_ipc "$deadline_ms" "$lock_cap_ms" lock lock)
+        reply=$(bounded "$deadline_ms" "$lock_cap_ms" omarchy-shell lock lock)
         lock_reply=${reply:-$lock_reply}
+        lock_requested=1
     fi
     sleep "$poll"
+    # Time asleep doesn't count against the shell, and a clock stepped back (NTP at boot) mustn't stretch the budget.
+    step_ms=$(($(now_ms) - step_start_ms))
+    ((step_ms > max_step_ms)) && deadline_ms=$((deadline_ms + step_ms - max_step_ms))
+    ((step_ms < 0)) && deadline_ms=$((deadline_ms + step_ms))
+    ((step_start_ms += step_ms))
 done
 
 # A lock that came up during the last call still counts, so give one more read its full cap.
 read_lock_state "$(($(now_ms) + status_cap_ms))"
+[[ $state == held ]] && finish "the shell holds the lock until a screen appears"
 finish_if_done "$state"
 
 if [[ $lock_reply == missing-pam ]] || jq -e '.passwordPam == false' <<<"$status_reply" >/dev/null; then
@@ -137,5 +153,5 @@ logger -t lock-after-tang -p user.err "could not lock the session at $entry: $re
 mkdir -p "${record%/*}"
 printf '%s\t%s\t%s\n' "$(date -Iseconds)" "$entry" "$reason" >"$record"
 # SDDM autologins only once per boot, so ending the session brings back the password greeter.
-loginctl terminate-session "$XDG_SESSION_ID"
+loginctl terminate-session "$session"
 exit 1
