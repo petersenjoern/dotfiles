@@ -24,9 +24,7 @@
     "openrouter/deepseek/deepseek-v4-pro": "high",
     "openrouter/deepseek/deepseek-v4-flash": "low",
     "openrouter/z-ai/glm-5.2": "high",
-    "openrouter/moonshotai/kimi-k3": "high",
-    "ollama/gemma4:latest": "medium",
-    "ollama/gemma4": "medium"
+    "openrouter/moonshotai/kimi-k3": "high"
   },
   "thinkingBudgets": {
     "minimal": 512,
@@ -47,7 +45,6 @@
     "openrouter/z-ai/glm-5.2",
     "aegis/coding",
     "aegis/fast",
-    "openrouter/moonshotai/kimi-k3",
-    "ollama/gemma4:latest"
+    "openrouter/moonshotai/kimi-k3"
   ]
 }
