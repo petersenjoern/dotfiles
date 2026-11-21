@@ -464,3 +464,34 @@ substring search.
 `f` is not one: it takes a *format expression*, and any plain word is true, so
 filtering on `todo` silently keeps every row. The real form is
 `#{m:*todo*,#{window_name}}`.
+
+# iPad (Magic Keyboard, US layout, Caps Lock = Ctrl)
+In Termius it's Linux as usual (Ctrl, `C-a`, Option = Meta). Everywhere else,
+where the hand goes for Ctrl, use Cmd; for word jumps, use Option.
+Hold Cmd in any app for its shortcut list; hold Globe for the system ones.
+
+## Same as Omarchy (Super = Cmd)
+`Cmd+C/V/X/A`   - copy / paste / cut / select all (Omarchy: Super+C/V/X/A)
+`Cmd+W`         - close tab or window (Super+W)
+`Cmd+Space`     - search / launcher (Super+Space)
+`Cmd+Tab`       - app switcher (roughly Super+Tab)
+
+## Ctrl on Linux, Cmd on the iPad
+`Cmd+T` / `Cmd+Shift+T` - new tab / reopen closed tab
+`Cmd+L`         - address bar
+`Cmd+F`         - find
+`Cmd+Z` / `Cmd+Shift+Z` - undo / redo
+`Cmd+S`, `Cmd+B` - save, bold
+`Cmd+R`         - reload
+
+## Text navigation (differs most)
+`Option+←/→`    - jump a word (Linux: Ctrl+←/→)
+`Option+Backspace` - delete a word (Ctrl+Backspace)
+`Cmd+←/→`       - start / end of line (Home / End)
+`Cmd+↑/↓`       - top / bottom of document (Ctrl+Home / End)
+
+## iPad only
+`Cmd+H`         - Home Screen
+`Globe+A`       - Dock
+`Globe+C`       - Control Centre
+`Globe+N`       - notifications
