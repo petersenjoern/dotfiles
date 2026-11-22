@@ -112,19 +112,21 @@ Copy `dotfiles.local.conf.example` and fill in your values. Everything else deri
 
 ### Shell History Sync (Atuin)
 
-Atuin syncs shell history across machines with encrypted cloud sync.
+Atuin syncs shell history across machines, encrypted on each machine, through a
+self-hosted server on the homelab laptop (set up by the homelab repo's laptop wizard).
+The shell rc builds the sync address from `REMOTE_TAILNET` in `dotfiles.local.conf`.
 
-1. Install Atuin:
+1. Install Atuin and deploy the config:
 ```bash
-pacman -S atuin
+# Omarchy
+pacman -S atuin && ./dev-env-omarchy
+# Debian server with bash only: installs fzf, atuin and bash-preexec, then hooks ~/.bashrc
+./dev-env-bash --install
 ```
-2. Run `./dev-env-omarchy` to deploy the Atuin config
-3. Register or log in:
+2. Set `REMOTE_TAILNET` in `dotfiles.local.conf` and open a new shell.
+3. Log in. The homelab wizard registers the account once; password and key are in
+   1Password (vault `homelab`, item `atuin`):
 ```bash
-# First machine
-atuin register -u <username> -e <email>
-
-# Subsequent machines
 atuin login -u <username>
 ```
 4. Clean existing history (interactive — review each flagged entry):

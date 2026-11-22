@@ -223,6 +223,8 @@ export PS1="\W \$ "
 # adjust this to be dynamic
 # eval "$(~/.local/bin/mise activate zsh)"
 # Atuin - shell history sync (replaces Ctrl+R and up/down arrow history search)
+# The sync server's tailnet name stays out of this public repo, in dotfiles.local.conf.
+[ -n "$REMOTE_TAILNET" ] && export ATUIN_SYNC_ADDRESS="https://atuin.$REMOTE_TAILNET"
 eval "$(atuin init zsh)"
 
 eval "$(/usr/bin/mise activate zsh)"

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Shell history setup for a bash-only Debian server (jpberry): atuin + fzf, no zsh.
+set -euo pipefail
+
+DEV_ENV="${DEV_ENV:-$(cd "$(dirname "$0")" && pwd)}"
+
+if [[ "${1:-}" == "--install" ]]; then
+    sudo apt-get install -y fzf
+    # Debian's atuin is too old to match the other machines; upstream's installer goes to ~/.atuin/bin.
+    curl --proto '=https' --tlsv1.2 -LsSf \
+        https://github.com/atuinsh/atuin/releases/latest/download/atuin-installer.sh |
+        sh -s -- --no-modify-path
+    curl --proto '=https' --tlsv1.2 -LsSf \
+        https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh \
+        -o "$HOME/.bash-preexec.sh"
+fi
+
+mkdir -p "$HOME/.config/atuin" "$HOME/.config/personal"
+cp "$DEV_ENV/atuin/config.toml" "$HOME/.config/atuin/config.toml"
+cp "$DEV_ENV/bash/history.bash" "$HOME/.config/personal/history.bash"
+[ -f "$DEV_ENV/dotfiles.local.conf" ] && cp "$DEV_ENV/dotfiles.local.conf" "$HOME/.dotfiles.local.conf"
+
+line='[ -f ~/.config/personal/history.bash ] && . ~/.config/personal/history.bash'
+grep -qxF "$line" "$HOME/.bashrc" || printf '\n%s\n' "$line" >> "$HOME/.bashrc"
+echo "done: open a new shell, then: atuin import bash && atuin login -u <you>"
