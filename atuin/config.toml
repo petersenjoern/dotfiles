@@ -1,8 +1,8 @@
 ## Atuin configuration
 ## See: https://docs.atuin.sh/configuration/config/
 
-## Sync settings (using Atuin cloud; switch sync_address for self-hosted later)
-# sync_address = "https://api.atuin.sh"
+## Sync: self-hosted on the homelab laptop. The shell rc sets ATUIN_SYNC_ADDRESS from
+## REMOTE_TAILNET (dotfiles.local.conf), so the tailnet name stays out of this repo.
 
 ## Search
 search_mode = "fuzzy"
