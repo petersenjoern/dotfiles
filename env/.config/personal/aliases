@@ -10,6 +10,9 @@ alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
 alias ffm="fzf -m --preview 'bat --style=numbers --color=always {}'"
 alias q="exit"
 
+# Remote desktop on a private screen, so the remote's physical monitor never shows the session
+alias gliff="gliff --headless"
+
 # Directories
 alias ..="cd .."
 alias ...="cd ../.."

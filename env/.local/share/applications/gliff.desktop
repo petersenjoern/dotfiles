@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Gliff
+GenericName=Remote Desktop
+Comment=Remote-desktop a Hyprland session over SSH
+Exec=gliff --headless
+Icon=gliff
+Terminal=false
+Categories=Network;RemoteAccess;
+Keywords=remote;desktop;ssh;hyprland;
+StartupWMClass=gliff
