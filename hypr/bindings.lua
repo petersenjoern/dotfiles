@@ -67,5 +67,6 @@ for ws = 1, 10 do
   hl.unbind("SUPER + code:" .. (ws + 9))
 end
 for ws = 1, 9 do
-  o.bind("CTRL + code:" .. (ws + 9), "Switch to workspace " .. ws, hl.dsp.focus({ workspace = tostring(ws) }))
+  -- Omarchy 4.5 numbers workspaces per monitor (DP-4 holds 11-20), so go to the focused monitor's slot.
+  o.bind("CTRL + code:" .. (ws + 9), "Switch to workspace " .. ws, o.workspaces.focus(ws))
 end
