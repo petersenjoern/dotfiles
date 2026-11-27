@@ -17,6 +17,7 @@ rebind("SUPER + SHIFT + ALT + B", "Browser (private)", "omarchy-launch-browser -
 -- Class is org.telegram.desktop; omarchy-launch-or-focus matches \bpattern\b
 -- case-insensitively against class or title, so the bare word is enough.
 rebind("SUPER + SHIFT + ALT + G", "Telegram", { launch = "Telegram", focus = "telegram" })
+rebind("SUPER + CTRL + G", "Gliff", { launch = "gliff --headless", focus = "gliff" })
 rebind("SUPER + SHIFT + W", "Workspace layout", "$HOME/.local/scripts/workspace-layout")
 rebind("SUPER + SHIFT + P", "Tmux project", "$HOME/.local/scripts/tmux-project")
 rebind("SUPER + SHIFT + M", "Next waiting Claude", "$HOME/.local/scripts/claude-next")
